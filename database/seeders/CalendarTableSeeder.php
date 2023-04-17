@@ -21,7 +21,7 @@ class CalendarTableSeeder extends Seeder
 
         $calendarables = collect(config('auth.providers'))
             ->pluck('model')
-            ->filter(fn($model) => class_uses_recursive($model)[HasCalendars::class] ?? false);
+            ->filter(fn ($model) => class_uses_recursive($model)[HasCalendars::class] ?? false);
 
         foreach ($calendarables as $calendarable) {
             foreach ($calendarable::all() as $model) {

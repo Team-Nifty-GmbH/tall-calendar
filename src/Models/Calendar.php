@@ -2,11 +2,9 @@
 
 namespace TeamNiftyGmbH\Calendar\Models;
 
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Calendarable;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
 

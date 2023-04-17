@@ -11,10 +11,10 @@ class CalendarServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/tall-calendar.php',
+            __DIR__.'/../config/tall-calendar.php',
             'tall-calendar'
         );
     }
@@ -32,7 +32,7 @@ class CalendarServiceProvider extends ServiceProvider
 //            ModelInfoCacheReset::class,
 //        ]);
 
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'tall-calendar');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'tall-calendar');
 
 //        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
     }
@@ -41,15 +41,15 @@ class CalendarServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/tall-calendar.php' => config_path('tall-calendar.php'),
+                __DIR__.'/../config/tall-calendar.php' => config_path('tall-calendar.php'),
             ], 'tall-calendar-config');
 
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/tall-calendar'),
+                __DIR__.'/../resources/views' => resource_path('views/vendor/tall-calendar'),
             ], 'tall-calendar-views');
 
             $this->publishes([
-                __DIR__ . '/../resources/lang' => resource_path('lang/vendor/tall-calendar'),
+                __DIR__.'/../resources/lang' => resource_path('lang/vendor/tall-calendar'),
             ], 'tall-calendar-lang');
         }
     }
