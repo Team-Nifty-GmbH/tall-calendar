@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+    @apply p-4 mb-0;
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-top a {
+    @apply bg-indigo-600 text-white font-semibold rounded-full;
+}
+
+.fc-day {
+    @apply bg-white text-gray-800;
+}
+
+.fc-day.fc-day-other {
+    @apply bg-gray-50 text-gray-500;
+}
+
+.fc-daygrid-day-top {
+    @apply text-gray-700 text-sm;
+}
+
+.fc-h-event {
+    @apply opacity-75 hover:opacity-100;
+}
+
+.fc-button {
+    @apply !capitalize;
+}
+
+.fc-scrollgrid  {
+    @apply !border-l-0 !border-b-0 !border-r-0 !border-gray-200;
+}
+
+.fc-col-header-cell .fc-scrollgrid-sync-inner {
+    @apply py-2 font-semibold;
+}

@@ -6,7 +6,8 @@
     "require": {
         "php": "^8.1|^8.2",
         "laravel/framework": "^9.0|^10.0",
-        "livewire/livewire": "^2.0"
+        "livewire/livewire": "^2.0",
+        "wireui/wireui": "^1.17"
     },
     "require-dev": {
         "laravel/pint": "^1.0",
@@ -22,7 +23,9 @@
     },
     "autoload": {
         "psr-4": {
-            "TeamNiftyGmbh\\Calendar\\": "src/"
+            "TeamNiftyGmbH\\Calendar\\": "src/",
+            "TeamNiftyGmbH\\Calendar\\Database\\Seeders\\": "database/seeders/",
+            "TeamNiftyGmbH\\Calendar\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
