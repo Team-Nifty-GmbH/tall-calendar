@@ -29,15 +29,15 @@ class CalendarServiceProvider extends ServiceProvider
     {
         $this->offerPublishing();
 
-//        $this->commands([
-//            MakeDataTableCommand::class,
-//            ModelInfoCache::class,
-//            ModelInfoCacheReset::class,
-//        ]);
+        //        $this->commands([
+        //            MakeDataTableCommand::class,
+        //            ModelInfoCache::class,
+        //            ModelInfoCacheReset::class,
+        //        ]);
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'tall-calendar');
 
-//        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        //        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
     }
 
     protected function offerPublishing(): void
