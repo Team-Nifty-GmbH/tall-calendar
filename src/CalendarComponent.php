@@ -21,6 +21,7 @@ class CalendarComponent extends Component
     public bool $showInvites = true;
 
     private Collection $sharedWithMe;
+
     private Collection $myCalendars;
 
     public function render(): Factory|Application|View
@@ -36,10 +37,10 @@ class CalendarComponent extends Component
                     Carbon::parse($info['start']),
                     Carbon::parse($info['end']),
                 ])
-                ->orWhereBetween('end', [
-                    Carbon::parse($info['start']),
-                    Carbon::parse($info['end']),
-                ]);
+                    ->orWhereBetween('end', [
+                        Carbon::parse($info['start']),
+                        Carbon::parse($info['end']),
+                    ]);
             })
             ->get()
             ->map(function (CalendarEvent $event) {
@@ -113,7 +114,7 @@ class CalendarComponent extends Component
     public function getViews(): array
     {
         return [
-            'dayGridMonth'
+            'dayGridMonth',
         ];
     }
 

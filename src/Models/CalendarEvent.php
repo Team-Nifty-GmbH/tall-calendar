@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
 
 class CalendarEvent extends Model
@@ -26,12 +26,12 @@ class CalendarEvent extends Model
 
     public function calendar(): BelongsTo
     {
-        return $this->belongsTo(config('calendar.models.calendar'));
+        return $this->belongsTo(config('tall-calendar.models.calendar'));
     }
 
-    public function invites(): MorphMany
+    public function invites(): HasMany
     {
-        return $this->hasMany(config('tall-calendar.models.invitables'));
+        return $this->hasMany(config('tall-calendar.models.invitable'));
     }
 
     public function uniqueIds()

@@ -3,6 +3,7 @@
 namespace TeamNiftyGmbH\Calendar;
 
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class CalendarServiceProvider extends ServiceProvider
 {
@@ -17,6 +18,8 @@ class CalendarServiceProvider extends ServiceProvider
             __DIR__ . '/../config/tall-calendar.php',
             'tall-calendar'
         );
+
+        Livewire::component('calendar-component', CalendarComponent::class);
     }
 
     /**
