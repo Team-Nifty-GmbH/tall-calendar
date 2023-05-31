@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::create('inviteables', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('event_id');
+            $table->unsignedBigInteger('calendar_event_id');
             $table->unsignedBigInteger('model_calendar_id')->nullable();
             $table->morphs('inviteable');
             $table->string('email')->nullable();
             $table->string('status')->nullable();
             $table->timestamps();
 
-            $table->foreign('event_id')
+            $table->foreign('calendar_event_id')
                 ->references('id')
                 ->on('calendar_events')
                 ->onDelete('cascade');
@@ -25,6 +25,8 @@ return new class extends Migration
                 ->references('id')
                 ->on('calendars')
                 ->onDelete('cascade');
+
+            $table->unique(['calendar_event_id', 'inviteable_id', 'inviteable_type']);
         });
     }
 

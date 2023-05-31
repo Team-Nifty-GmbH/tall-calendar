@@ -14,6 +14,6 @@ trait HasCalendars
 
     public function invites(): MorphMany
     {
-        return $this->morphMany(config('tall-calendar.models.calendar_event'), 'calendarable');
+        return $this->morphMany(config('tall-calendar.models.inviteable'), 'inviteable');
     }
 }

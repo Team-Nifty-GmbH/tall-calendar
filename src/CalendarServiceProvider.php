@@ -29,15 +29,7 @@ class CalendarServiceProvider extends ServiceProvider
     {
         $this->offerPublishing();
 
-        //        $this->commands([
-        //            MakeDataTableCommand::class,
-        //            ModelInfoCache::class,
-        //            ModelInfoCacheReset::class,
-        //        ]);
-
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'tall-calendar');
-
-        //        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
     }
 
     protected function offerPublishing(): void
@@ -52,8 +44,8 @@ class CalendarServiceProvider extends ServiceProvider
             ], 'tall-calendar-views');
 
             $this->publishes([
-                __DIR__.'/../resources/lang' => resource_path('lang/vendor/tall-calendar'),
-            ], 'tall-calendar-lang');
+                __DIR__.'/../database/migrations' => database_path('migrations'),
+            ], 'tall-calendar-migrations');
         }
     }
 }

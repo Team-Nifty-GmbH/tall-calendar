@@ -2,11 +2,14 @@
 
 namespace TeamNiftyGmbH\Calendar\Models;
 
+use FluxErp\Models\User;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Str;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
 
 class CalendarEvent extends Model
@@ -31,24 +34,58 @@ class CalendarEvent extends Model
 
     public function invites(): HasMany
     {
-        return $this->hasMany(config('tall-calendar.models.invitable'));
+        return $this->hasMany(config('tall-calendar.models.inviteable'));
     }
 
-    public function uniqueIds()
+    public function invited()
+    {
+        return $this->morphedByMany(User::class, 'inviteable');
+    }
+
+    public function uniqueIds(): array
     {
         return ['ulid'];
     }
 
-    public function toCalendarEventObject()
+    public function toCalendarEventObject(array $attributes = []): array
     {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'start' => $this->start,
-            'end' => $this->end,
-            'allDay' => $this->is_all_day,
-            'calendar_id' => $this->calendar_id,
-            'extendedProps' => $this->extended_props,
-        ];
+        return array_merge(
+            [
+                'id' => $this->id,
+                'title' => $this->title,
+                'start' => $this->start->format('Y-m-d\TH:i:s.u'),
+                'end' => $this->end->format('Y-m-d\TH:i:s.u'),
+                'allDay' => $this->is_all_day,
+                'calendar_id' => $this->calendar_id,
+                'editable' => ! $this->calendar->is_public && ! $this->is_invited,
+                'is_editable' => ! $this->calendar->is_public && ! $this->is_invited,
+                'is_invited' => $this->is_invited,
+                'is_public' => $this->calendar->is_public,
+                'status' => $this->status ?: 'busy',
+                'invited' => $this->invited->toArray(),
+                'description' => $this->description,
+                'extendedProps' => $this->extended_props,
+            ],
+            $attributes
+        );
+    }
+
+    public function fromCalendarEventObject(array $calendarEvent): static
+    {
+        $mappedArray = [];
+
+        foreach ($calendarEvent as $key => $value) {
+            $mappedArray[Str::snake($key)] = $value;
+        }
+
+        $mappedArray['is_all_day'] = $calendarEvent['allDay'] ?? false;
+
+        foreach ($mappedArray['extended_props'] ?? [] as $key => $value) {
+            $mappedArray[Str::snake($key)] = $mappedArray[Str::snake($key)] ?? $value;
+        }
+
+        $this->fill($mappedArray);
+
+        return $this;
     }
 }

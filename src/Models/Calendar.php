@@ -5,7 +5,10 @@ namespace TeamNiftyGmbH\Calendar\Models;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Str;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Calendarable;
+use TeamNiftyGmbH\Calendar\Models\Pivot\Invitable;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
 
 class Calendar extends Model
@@ -36,6 +39,17 @@ class Calendar extends Model
         return $this->hasMany(config('tall-calendar.models.calendar_event'));
     }
 
+    public function invitesCalendarEvents()
+    {
+        return $this->hasManyThrough(
+            config('tall-calendar.models.calendar_event'),
+            config('tall-calendar.models.inviteable'),
+            'model_calendar_id',
+            'id',
+            'id',
+            'calendar_event_id');
+    }
+
     public function calendarables(): HasMany
     {
         return $this->hasMany(Calendarable::class);
@@ -54,5 +68,18 @@ class Calendar extends Model
             ],
             $attributes
         );
+    }
+
+    public function fromCalendarObject(array $calendar): static
+    {
+        $mappedArray = [];
+
+        foreach ($calendar as $key => $value) {
+            $mappedArray[Str::snake($key)] = $value;
+        }
+
+        $this->fill($mappedArray);
+
+        return $this;
     }
 }
