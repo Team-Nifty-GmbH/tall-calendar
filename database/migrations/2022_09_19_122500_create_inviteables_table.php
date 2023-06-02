@@ -26,7 +26,7 @@ return new class extends Migration
                 ->on('calendars')
                 ->onDelete('cascade');
 
-            $table->unique(['calendar_event_id', 'inviteable_id', 'inviteable_type']);
+            $table->unique(['calendar_event_id', 'inviteable_id', 'inviteable_type'], 'inviteables_unique');
         });
     }
 
