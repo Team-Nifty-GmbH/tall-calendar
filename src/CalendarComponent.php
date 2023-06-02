@@ -32,7 +32,7 @@ class CalendarComponent extends Component
 
     public function mount()
     {
-        $this->calendarEvent =  ['start' => now(), 'end' => now()];
+        $this->calendarEvent = ['start' => now(), 'end' => now()];
     }
 
     public function getRules()
@@ -65,7 +65,7 @@ class CalendarComponent extends Component
                         Carbon::parse($info['end']),
                     ]);
             })
-            ->with('invited', fn($query) => $query->withPivot('status'))
+            ->with('invited', fn ($query) => $query->withPivot('status'))
             ->get()
             ->merge(
                 $calendar->invitesCalendarEvents()
@@ -74,8 +74,8 @@ class CalendarComponent extends Component
                     ->addSelect('inviteables.model_calendar_id AS calendar_id')
                     ->whereIn('inviteables.status', ['accepted', 'maybe'])
                     ->get()
-                    ->each(fn($event) => $event->is_invited = true)
-                )
+                    ->each(fn ($event) => $event->is_invited = true)
+            )
             ->map(function (CalendarEvent $event) use ($calendarAttributes) {
                 $event->invited->map(function ($user) {
                     $user->label = $user->getLabel();
@@ -246,14 +246,14 @@ class CalendarComponent extends Component
 
         $invites = collect($attributes['invited'] ?? [])
             ->map(function ($invite) {
-               return [
-                   'id' => $invite['id'] ?? null,
-                   'is_selected' => $invite['isSelected'] ?? false,
-                   'inviteable_id' => $invite['id'],
-                   'inviteable_type' => $invite['type'] ?? auth()->user()->getMorphClass(),
-                   'email' => $invite['email'] ?? $invite['description'] ?? null,
-                   'pivot' => $invite['pivot'] ?? [],
-               ];
+                return [
+                    'id' => $invite['id'] ?? null,
+                    'is_selected' => $invite['isSelected'] ?? false,
+                    'inviteable_id' => $invite['id'],
+                    'inviteable_type' => $invite['type'] ?? auth()->user()->getMorphClass(),
+                    'email' => $invite['email'] ?? $invite['description'] ?? null,
+                    'pivot' => $invite['pivot'] ?? [],
+                ];
             });
 
         $event->invites()

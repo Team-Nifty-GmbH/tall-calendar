@@ -5,10 +5,8 @@ namespace TeamNiftyGmbH\Calendar\Models;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Calendarable;
-use TeamNiftyGmbH\Calendar\Models\Pivot\Invitable;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
 
 class Calendar extends Model
