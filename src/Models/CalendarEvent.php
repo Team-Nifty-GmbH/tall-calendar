@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
 
@@ -36,9 +37,21 @@ class CalendarEvent extends Model
         return $this->hasMany(config('tall-calendar.models.inviteable'));
     }
 
-    public function invited()
+    public function invited(): \Illuminate\Database\Eloquent\Relations\MorphToMany
     {
         return $this->morphedByMany(User::class, 'inviteable');
+    }
+
+    public function invitedModels(): Collection
+    {
+        $types = $this->invites()->distinct('inviteable_type')->pluck('inviteable_type')->toArray();
+
+        $invitedModels = collect();
+        foreach ($types as $type) {
+            $invitedModels = $invitedModels->merge($this->morphedByMany($type, 'inviteable')->withPivot('status')->get());
+        }
+
+        return $invitedModels;
     }
 
     public function uniqueIds(): array

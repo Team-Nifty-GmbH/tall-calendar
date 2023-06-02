@@ -1,5 +1,7 @@
 <div tall-calendar x-data="{
         ...tallCalendar(),
+        @section('calendar-data')
+        @show
     }"
      x-on:edit-calendar="editCalendar($event.detail)"
      x-on:calendar-event-click="eventClick($event.detail); showModal()"
@@ -7,6 +9,7 @@
      x-on:calendar-event-drop="eventClick($event.detail); saveEvent();"
 >
     <div x-bind:id="id + '-calendar-event-edit'">
+        @section('calendar-event-modal')
         <x-modal.card :title="__('Edit Event')" x-on:close="this.calendarEventItemProxy = {};">
             <x-tall-calendar::event-edit />
             <x-slot name="footer">
@@ -29,6 +32,7 @@
                 </div>
             </x-slot>
         </x-modal.card>
+        @show
     </div>
     <x-card padding="none" class="lg:flex whitespace-nowrap">
         <div>
@@ -49,6 +53,7 @@
                         </x-slot>
                     </x-modal.card>
                 </div>
+                @section('calendar-list')
                 <div class="p-1.5 space-y-4">
                     <div x-data="{show: true}">
                         <div class="flex justify-between items-center group">
@@ -89,6 +94,7 @@
                         </div>
                     </div>
                 </div>
+                @show
             @endif
             @if($showInvites)
                 <div x-data="{tab: {name: 'new', status: [null]}}" class="p-1.5 space-y-4">

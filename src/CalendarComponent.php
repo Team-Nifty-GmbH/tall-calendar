@@ -5,6 +5,7 @@ namespace TeamNiftyGmbH\Calendar;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
@@ -77,15 +78,26 @@ class CalendarComponent extends Component
                     ->each(fn ($event) => $event->is_invited = true)
             )
             ->map(function (CalendarEvent $event) use ($calendarAttributes) {
-                $event->invited->map(function ($user) {
-                    $user->label = $user->getLabel();
-                    $user->description = $user->getDescription();
-                    $user->src = $user->getAvatarUrl();
-                });
+                $invited = $this->getInvited($event);
 
-                return $event->toCalendarEventObject(['is_editable' => $calendarAttributes['permission'] !== 'reader']);
+                return $event->toCalendarEventObject(['is_editable' => $calendarAttributes['permission'] !== 'reader', 'invited' => $invited]);
             })
             ?->toArray();
+    }
+
+    public function getInvited(CalendarEvent $event)
+    {
+        return $event->invitedModels()
+            ->map(
+                function (Model $inviteable) {
+                    return [
+                        'id' => $inviteable->id,
+                        'label' => $inviteable->getLabel(),
+                        'pivot' => $inviteable->pivot,
+                    ];
+                }
+            )
+            ->toArray();
     }
 
     public function getInvites()
