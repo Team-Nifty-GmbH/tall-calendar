@@ -66,7 +66,7 @@ class CalendarEvent extends Model
                 'id' => $this->id,
                 'title' => $this->title,
                 'start' => $this->start->format('Y-m-d\TH:i:s.u'),
-                'end' => $this->end->format('Y-m-d\TH:i:s.u'),
+                'end' => $this->end?->format('Y-m-d\TH:i:s.u'),
                 'allDay' => $this->is_all_day,
                 'calendar_id' => $this->calendar_id,
                 'editable' => ! $this->calendar->is_public && ! $this->is_invited,
