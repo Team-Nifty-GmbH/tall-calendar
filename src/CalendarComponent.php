@@ -10,8 +10,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
-use TeamNiftyGmbH\Calendar\Models\Calendar;
-use TeamNiftyGmbH\Calendar\Models\CalendarEvent;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Inviteable;
 use WireUi\Traits\Actions;
 
@@ -53,7 +51,7 @@ class CalendarComponent extends Component
 
     public function getEvents(array $info, array $calendarAttributes): array
     {
-        $calendar = Calendar::query()->find($calendarAttributes['id']);
+        $calendar = config('tall-calendar.models.calendar')::query()->find($calendarAttributes['id']);
 
         return $calendar->calendarEvents()
             ->where(function ($query) use ($info) {
@@ -77,7 +75,7 @@ class CalendarComponent extends Component
                     ->get()
                     ->each(fn ($event) => $event->is_invited = true)
             )
-            ->map(function (CalendarEvent $event) use ($calendarAttributes) {
+            ->map(function ($event) use ($calendarAttributes) {
                 $invited = $this->getInvited($event);
 
                 return $event->toCalendarEventObject(['is_editable' => $calendarAttributes['permission'] !== 'reader', 'invited' => $invited]);
@@ -85,7 +83,7 @@ class CalendarComponent extends Component
             ?->toArray();
     }
 
-    public function getInvited(CalendarEvent $event)
+    public function getInvited(Model $event)
     {
         return $event->invitedModels()
             ->map(
@@ -126,7 +124,7 @@ class CalendarComponent extends Component
             ->wherePivot('permission', 'owner')
             ->withCount('calendarables')
             ->get()
-            ->map(function (Calendar $calendar) {
+            ->map(function ($calendar) {
                 return $calendar->toCalendarObject(
                     [
                         'permission' => $calendar['pivot']['permission'],
@@ -143,7 +141,7 @@ class CalendarComponent extends Component
             ->withPivot('permission')
             ->wherePivot('permission', '!=', 'owner')
             ->get()
-            ->map(function (Calendar $calendar) {
+            ->map(function ($calendar) {
                 return $calendar->toCalendarObject(
                     [
                         'permission' => $calendar['pivot']['permission'],
@@ -156,11 +154,11 @@ class CalendarComponent extends Component
 
     public function getPublicCalendars(): Collection
     {
-        return Calendar::where('is_public', true)
+        return config('tall-calendar.models.calendar')::where('is_public', true)
             ->whereNotIn('id', $this->myCalendars->pluck('id'))
             ->whereNotIn('id', $this->sharedWithMe->pluck('id'))
             ->get()
-            ->map(function (Calendar $calendar) {
+            ->map(function ($calendar) {
                 return $calendar->toCalendarObject([
                     'permission' => 'reader',
                     'group' => 'public',
@@ -220,14 +218,18 @@ class CalendarComponent extends Component
         );
     }
 
-    public function deleteCalendar(Calendar $calendar): bool
+    public function deleteCalendar(int $calendar): bool
     {
+        $calendar = config('tall-calendar.models.calendar')::query()
+            ->whereKey($calendar)
+            ->firstOrFail();
+
         return $calendar->delete();
     }
 
     public function saveCalendar(array $attributes): array
     {
-        $calendar = Calendar::query()->findOrNew($attributes['id'] ?? null);
+        $calendar = config('tall-calendar.models.calendar')::query()->findOrNew($attributes['id'] ?? null);
 
         $calendar->fromCalendarObject($attributes);
 
@@ -249,7 +251,7 @@ class CalendarComponent extends Component
             return false;
         }
 
-        $event = CalendarEvent::query()
+        $event = config('tall-calendar.models.calendar_event')::query()
             ->with('invites')
             ->findOrNew($attributes['id'] ?? null);
 
@@ -285,8 +287,12 @@ class CalendarComponent extends Component
         return $event->toCalendarEventObject();
     }
 
-    public function deleteEvent(CalendarEvent $event): bool
+    public function deleteEvent(int $event): bool
     {
+        $event = config('tall-calendar.models.calendar_event')::query()
+            ->whereKey($event)
+            ->firstOrFail();
+
         return $event->delete();
     }
 
