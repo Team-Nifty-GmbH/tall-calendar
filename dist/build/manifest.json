@@ -1,21 +1,21 @@
 {
   "resources/css/calendar.css": {
-    "file": "assets/calendar-8e7e9c5b.css",
+    "file": "assets/calendar-330b6286.css",
     "isEntry": true,
     "src": "resources/css/calendar.css"
   },
   "resources/js/calendar.js": {
-    "file": "assets/calendar-a8dca55d.js",
+    "file": "assets/calendar-72f70769.js",
     "isEntry": true,
     "src": "resources/js/calendar.js"
   },
   "resources/js/fullcalendar.js": {
-    "file": "assets/fullcalendar-d8dd7b2f.js",
+    "file": "assets/fullcalendar-a8aca8b6.js",
     "isEntry": true,
     "src": "resources/js/fullcalendar.js"
   },
   "resources/js/index.js": {
-    "file": "assets/index-4f97fa4b.js",
+    "file": "assets/index-e7693f1c.js",
     "imports": [
       "resources/js/fullcalendar.js",
       "resources/js/calendar.js"
