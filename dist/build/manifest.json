@@ -5,7 +5,7 @@
     "src": "resources/css/calendar.css"
   },
   "resources/js/calendar.js": {
-    "file": "assets/calendar-72f70769.js",
+    "file": "assets/calendar-a8dca55d.js",
     "isEntry": true,
     "src": "resources/js/calendar.js"
   },
@@ -15,7 +15,7 @@
     "src": "resources/js/fullcalendar.js"
   },
   "resources/js/index.js": {
-    "file": "assets/index-e7693f1c.js",
+    "file": "assets/index-84dd93cb.js",
     "imports": [
       "resources/js/fullcalendar.js",
       "resources/js/calendar.js"
