@@ -144,7 +144,6 @@ const calendar = () => {
             }
 
             this.calendarEvent = eventObject;
-            this.$dispatch('calendar-event-click', this.calendarEvent);
         },
         syncProxy() {
             const value = this.calendarEvent;
