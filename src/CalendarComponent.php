@@ -193,7 +193,9 @@ class CalendarComponent extends Component
     public function getCalendarEventsBeingListenedFor(): array
     {
         return array_intersect_key(
-            parent::getEventsBeingListenedFor(),
+            method_exists(parent::class, 'getEventsBeingListenedFor')
+                ? parent::getEventsBeingListenedFor()
+                : array_keys(parent::getListeners()),
             [
                 'select',
                 'unselect',
@@ -246,6 +248,7 @@ class CalendarComponent extends Component
 
     public function saveEvent(array $attributes): array|bool
     {
+        $this->skipRender();
         $validator = Validator::make($attributes, $this->getRules());
         if ($validator->fails()) {
             return false;

@@ -135,6 +135,8 @@
                 </div>
             @endif
         </div>
-        <div wire:ignore class="dark:text-gray-50 border-l dark:border-secondary-600" x-bind:id="id"></div>
+        <div wire:ignore>
+            <div class="dark:text-gray-50 border-l dark:border-secondary-600" x-bind:id="id"></div>
+        </div>
     </x-card>
 </div>
