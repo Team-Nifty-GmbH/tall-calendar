@@ -1,5 +1,6 @@
 <div tall-calendar x-data="{
         ...tallCalendar(),
+        calendarEvent: @entangle('calendarEvent'),
         @section('calendar-data')
         @show
     }"
@@ -21,13 +22,29 @@
                             flat
                             negative
                             :label="__('Delete')"
-                            x-on:click="deleteEvent()"
+                            x-on:click="$wire.confirmDeletion()"
                             x-show="calendarEvent.is_editable && calendarEvent.id"
                         />
+                        <x-dialog id="delete-event-dialog" :title="__('Confirm Delete Event')">
+                            <template x-if="calendarEvent.is_repeatable">
+                                <div>
+                                    <x-radio :label="__('This event')" value="this" wire:model.defer="confirmOption" />
+                                    <x-radio :label="__('This event and following')" value="future" wire:model.defer="confirmOption" />
+                                    <x-radio :label="__('All events')" value="all" wire:model.defer="confirmOption" />
+                                </div>
+                            </template>
+                        </x-dialog>
                     </div>
                     <div class="flex">
                         <x-button flat :label="__('Cancel')" x-on:click="close" />
-                        <x-button primary :label="__('Save')" x-on:click="saveEvent()" />
+                        <x-button primary :label="__('Save')"
+                                  x-on:click="$wire.confirmSave()"
+                                  x-on:event-saved="getCalendarEventSources()"
+                        />
+                        <x-dialog id="edit-event-dialog" :title="__('Edit Repeatable Event')">
+                            <x-radio :label="__('This event and following')" value="future" wire:model.defer="confirmOption" />
+                            <x-radio :label="__('All events')" value="all" wire:model.defer="confirmOption" />
+                        </x-dialog>
                     </div>
                 </div>
             </x-slot>

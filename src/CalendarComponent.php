@@ -25,22 +25,44 @@ class CalendarComponent extends Component
 
     public array $validationErrors = [];
 
+    public ?string $confirmOption = null;
+
     private Collection $sharedWithMe;
 
     private Collection $myCalendars;
 
-    public function mount()
+    public function mount(): void
     {
         $this->calendarEvent = ['start' => now(), 'end' => now()];
     }
 
-    public function getRules()
+    public function getRules(): array
     {
         return [
             'title' => 'required|string',
             'start' => 'required|date',
-            'end' => 'required|date',
+            'end' => 'required|date|after:start',
             'description' => 'nullable|string',
+
+            'is_repeatable' => 'boolean',
+            'interval' => 'required_if:is_repeatable,true|integer|min:1',
+            'unit' => 'required_if:is_repeatable,true|in:days,weeks,months,years',
+            'weekdays' => 'exclude_unless:unit,weeks|required_if:unit,weeks|array',
+            'weekdays.*' => 'required|in:Mon,Tue,Wed,Thu,Fri,Sat,Sun',
+            'monthly' => 'exclude_unless:unit,months|required_if:unit,months|in:day,first,second,third,fourth,last',
+            'repeat_radio' => 'nullable|in:repeat_end,recurrences',
+            'repeat_end' => [
+                'exclude_unless:repeat_radio,repeat_end',
+                'required_if:repeat_radio,repeat_end',
+                'date',
+                'after:start'
+            ],
+            'recurrences' => [
+                'exclude_unless:repeat_radio,recurrences',
+                'required_if:repeat_radio,recurrences',
+                'integer',
+                'min:1',
+            ],
         ];
     }
 
@@ -53,7 +75,8 @@ class CalendarComponent extends Component
     {
         $calendar = config('tall-calendar.models.calendar')::query()->find($calendarAttributes['id']);
 
-        return $calendar->calendarEvents()
+        $calendarEvents = $calendar->calendarEvents()
+            ->whereNull('repeat')
             ->where(function ($query) use ($info) {
                 $query->whereBetween('start', [
                     Carbon::parse($info['start']),
@@ -74,16 +97,21 @@ class CalendarComponent extends Component
                     ->whereIn('inviteables.status', ['accepted', 'maybe'])
                     ->get()
                     ->each(fn ($event) => $event->is_invited = true)
-            )
+            );
+
+        return $this->calculateRepeatableEvents($calendar, $info, $calendarEvents)
             ->map(function ($event) use ($calendarAttributes) {
                 $invited = $this->getInvited($event);
 
-                return $event->toCalendarEventObject(['is_editable' => $calendarAttributes['permission'] !== 'reader', 'invited' => $invited]);
+                return $event->toCalendarEventObject([
+                    'is_editable' => $calendarAttributes['permission'] !== 'reader', 'invited' => $invited,
+                    'is_repeatable' => ! is_null($event->repeat),
+                ]);
             })
             ?->toArray();
     }
 
-    public function getInvited(Model $event)
+    public function getInvited(Model $event): array
     {
         return $event->invitedModels()
             ->map(
@@ -98,7 +126,7 @@ class CalendarComponent extends Component
             ->toArray();
     }
 
-    public function getInvites()
+    public function getInvites(): array
     {
         return auth()->user()
             ->invites()
@@ -107,7 +135,7 @@ class CalendarComponent extends Component
             ->toArray();
     }
 
-    public function getCalendars()
+    public function getCalendars(): array
     {
         return array_merge(
             $this->getMyCalendars()->toArray(),
@@ -244,6 +272,26 @@ class CalendarComponent extends Component
         return $calendar->toCalendarObject(['group' => 'my']);
     }
 
+    public function confirmSave(): void
+    {
+        if (array_key_exists('id', $this->calendarEvent) && $this->calendarEvent['is_repeatable']) {
+            $this->confirmOption = 'future';
+            $this->dialog()->id('edit-event-dialog')->confirm([
+                'icon' => '',
+                'accept' => [
+                    'label' => __('Ok'),
+                    'method' => 'saveEvent',
+                    'params' => $this->calendarEvent,
+                ],
+                'reject' => [
+                    'label' => __('Cancel'),
+                ],
+            ]);
+        } else {
+            $this->saveEvent($this->calendarEvent);
+        }
+    }
+
     public function saveEvent(array $attributes): array|bool
     {
         $validator = Validator::make($attributes, $this->getRules());
@@ -253,9 +301,27 @@ class CalendarComponent extends Component
 
         $event = config('tall-calendar.models.calendar_event')::query()
             ->with('invites')
-            ->findOrNew($attributes['id'] ?? null);
+            ->when(
+                is_numeric($attributes['id']),
+                fn ($query) => $query->whereKey($attributes['id']),
+                fn ($query) => $query->where('ulid', $attributes['id'])
+            )
+            ->firstOrFail();
 
-        $event->fromCalendarEventObject($attributes);
+        if ($attributes['is_repeatable'])
+
+        // If edit option is "selected and future", set repeat_end of original and create new event with given values
+        if ($this->confirmOption === 'future') {
+            $originalEvent = $event;
+            $event = $event->replicate(['ulid']);
+            $event->fromCalendarEventObject($attributes);
+
+            $originalEvent->repeat_end = $originalEvent->start->subSecond();
+            $originalEvent->save();
+        } else {
+            $event->fromCalendarEventObject($attributes);
+        }
+
         $event->save();
 
         $invites = collect($attributes['invited'] ?? [])
@@ -284,16 +350,53 @@ class CalendarComponent extends Component
             );
         }
 
+        $this->dispatch('eventSaved')->self();
+
         return $event->toCalendarEventObject();
     }
 
-    public function deleteEvent(int $event): bool
+    public function confirmDeletion(): void
+    {
+        $this->confirmOption = 'this';
+        $this->dialog()->id('delete-event-dialog')->confirm([
+            'icon' => '',
+            'accept' => [
+                'label' => __('Ok'),
+                'method' => 'deleteEvent',
+                'params' => $this->calendarEvent['id'],
+            ],
+            'reject' => [
+                'label' => __('Cancel'),
+            ],
+        ]);
+    }
+
+    public function deleteEvent(int|string $event): bool
     {
         $event = config('tall-calendar.models.calendar_event')::query()
-            ->whereKey($event)
+            ->when(
+                is_numeric($event),
+                fn ($query) => $query->whereKey($event),
+                fn ($query) => $query->where('ulid', $event)
+            )
             ->firstOrFail();
 
-        return $event->delete();
+        if (! $event->repeat) {
+            $this->confirmOption = 'all';
+        }
+
+        return match ($this->confirmOption) {
+            'this' => $event->fill([
+                'excluded' => array_merge(
+                    $event->excluded ?: [],
+                    [Carbon::parse($this->calendarEvent['start'])->format('Y-m-d H:i:s')]
+                )
+            ])->save(),
+            'future' => $event->fill([
+                'repeat_end' => Carbon::parse($this->calendarEvent['start'])->subSecond()->format('Y-m-d H:i:s')
+            ])->save(),
+            default => $event->delete()
+        };
     }
 
     public function inviteStatus(Inviteable $event, string $status, int $calendarId)
@@ -303,5 +406,76 @@ class CalendarComponent extends Component
         $event->save();
 
         $this->skipRender();
+    }
+
+    private function calculateRepeatableEvents($calendar, array $info, Collection $calendarEvents): Collection
+    {
+        $repeatables = $calendar->calendarEvents()
+            ->whereNotNull('repeat')
+            ->whereDate('start', '<', $info['end'])
+            ->where(fn ($query) => $query->whereDate('repeat_end', '>', $info['start'])
+                ->orWhereNull('repeat_end')
+            )
+            ->get();
+
+        foreach ($repeatables as $repeatable) {
+            $recurrences = $repeatable->recurrences;
+            $i = 0;
+            for ($j = count($repeatValues = explode(',', $repeatable->repeat)); $j > 0; $j--) {
+                if ($repeatable->recurrences) {
+                    if ($recurrences < 1) {
+                        continue;
+                    }
+
+                    $datePeriod = new \DatePeriod(
+                        Carbon::parse($repeatable->start),
+                        \DateInterval::createFromDateString($repeatValues[$i]),
+                        ($count = (int) ceil($recurrences / $j)) - (int) ($i === 0), // subtract 1, because start date does not count towards recurrences limit
+                        (int) ($i !== 0) // 1 = Exclude start date
+                    );
+
+                    $recurrences -= $count;
+                } else {
+                    $datePeriod = new \DatePeriod(
+                        Carbon::parse($repeatable->start),
+                        \DateInterval::createFromDateString($repeatValues[$i]),
+                        Carbon::parse(is_null($repeatable->repeat_end) ?
+                            $info['end'] : min([$repeatable->repeat_end, $info['end']])
+                        ),
+                        (int) ($i !== 0)
+                    );
+                }
+
+                // filter dates in between start and end
+                $dates = array_filter(
+                    iterator_to_array($datePeriod),
+                    fn ($item) => ($date = $item->format('Y-m-d H:i:s')) > $info['start'] && $date < $info['end']
+                        && ! in_array($date, $repeatable->excluded ?: [])
+                );
+
+                $events = array_map(function ($date) use ($repeatable) {
+                    $interval = date_diff(Carbon::parse($repeatable->start), Carbon::parse($repeatable->end));
+
+                    return new (config('tall-calendar.models.calendar_event'))(
+                        array_merge(
+                            $repeatable->toArray(),
+                            [
+                                'start' => ($start = Carbon::parse($repeatable->start)->setDateFrom($date))
+                                    ->format('Y-m-d H:i:s'),
+                                'end' => $start->add($interval)->format('Y-m-d H:i:s'),
+                            ]
+                        )
+                    );
+                }, $dates);
+
+                foreach ($events as $event) {
+                    $calendarEvents->push($event);
+                }
+
+                $i++;
+            }
+        }
+
+        return $calendarEvents;
     }
 }
