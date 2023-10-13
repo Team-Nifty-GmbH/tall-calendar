@@ -55,7 +55,7 @@ class CalendarComponent extends Component
                 'exclude_unless:repeat_radio,repeat_end',
                 'required_if:repeat_radio,repeat_end',
                 'date',
-                'after:start'
+                'after:start',
             ],
             'recurrences' => [
                 'exclude_unless:repeat_radio,recurrences',
@@ -308,18 +308,19 @@ class CalendarComponent extends Component
             )
             ->firstOrFail();
 
-        if ($attributes['is_repeatable'])
+        if ($attributes['is_repeatable']) {
 
-        // If edit option is "selected and future", set repeat_end of original and create new event with given values
-        if ($this->confirmOption === 'future') {
-            $originalEvent = $event;
-            $event = $event->replicate(['ulid']);
-            $event->fromCalendarEventObject($attributes);
+            // If edit option is "selected and future", set repeat_end of original and create new event with given values
+            if ($this->confirmOption === 'future') {
+                $originalEvent = $event;
+                $event = $event->replicate(['ulid']);
+                $event->fromCalendarEventObject($attributes);
 
-            $originalEvent->repeat_end = $originalEvent->start->subSecond();
-            $originalEvent->save();
-        } else {
-            $event->fromCalendarEventObject($attributes);
+                $originalEvent->repeat_end = $originalEvent->start->subSecond();
+                $originalEvent->save();
+            } else {
+                $event->fromCalendarEventObject($attributes);
+            }
         }
 
         $event->save();
@@ -390,10 +391,10 @@ class CalendarComponent extends Component
                 'excluded' => array_merge(
                     $event->excluded ?: [],
                     [Carbon::parse($this->calendarEvent['start'])->format('Y-m-d H:i:s')]
-                )
+                ),
             ])->save(),
             'future' => $event->fill([
-                'repeat_end' => Carbon::parse($this->calendarEvent['start'])->subSecond()->format('Y-m-d H:i:s')
+                'repeat_end' => Carbon::parse($this->calendarEvent['start'])->subSecond()->format('Y-m-d H:i:s'),
             ])->save(),
             default => $event->delete()
         };

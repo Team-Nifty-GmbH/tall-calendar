@@ -75,7 +75,7 @@ class CalendarEvent extends Model
                 ],
                 str_contains($repeatable[0], 'month') => [
                     'unit' => 'months',
-                    'monthly' => str_contains($repeatable[0], 'of') ? explode(' ', $repeatable[0])[0] : 'day'
+                    'monthly' => str_contains($repeatable[0], 'of') ? explode(' ', $repeatable[0])[0] : 'day',
                 ],
                 str_contains($repeatable[0], 'week') => [
                     'unit' => 'weeks',
@@ -123,7 +123,7 @@ class CalendarEvent extends Model
                 'monthly' => $repeat['monthly'] ?? 'day',
                 'repeat_end' => $this->repeat_end?->format('Y-m-d'),
                 'recurrences' => $this->recurrences,
-                'repeat_radio' => $this->repeat_end ? 'repeat_end' : ($this->recurrences ? 'recurrences' : null)
+                'repeat_radio' => $this->repeat_end ? 'repeat_end' : ($this->recurrences ? 'recurrences' : null),
             ],
             $attributes
         );
@@ -148,10 +148,10 @@ class CalendarEvent extends Model
             if (in_array($mappedArray['unit'], ['days', 'years'])
                 || ($mappedArray['unit'] === 'months' && ($mappedArray['monthly'] ?? false) === 'day')
             ) {
-                $mappedArray['repeat'] = '+' . $mappedArray['interval'] . ' ' . $mappedArray['unit'];
+                $mappedArray['repeat'] = '+'.$mappedArray['interval'].' '.$mappedArray['unit'];
             } elseif ($mappedArray['unit'] === 'weeks') {
                 $mappedArray['repeat'] = implode(',', array_map(
-                    fn ($item) => 'next ' . $item . ' +' . $mappedArray['interval'] - 1 . ' ' . $mappedArray['unit'],
+                    fn ($item) => 'next '.$item.' +'.$mappedArray['interval'] - 1 .' '.$mappedArray['unit'],
                     array_intersect(
                         array_map(
                             fn ($item) => Carbon::parse($mappedArray['start'])->addDays($item)->format('D'),
@@ -161,9 +161,9 @@ class CalendarEvent extends Model
                     )
                 ));
             } elseif ($mappedArray['unit'] === 'months') {
-                $mappedArray['repeat'] = $mappedArray['monthly'] . ' '
-                    . Carbon::parse($mappedArray['start'])->format('D') . ' of +'
-                    . $mappedArray['interval'] . ' ' . $mappedArray['unit'];
+                $mappedArray['repeat'] = $mappedArray['monthly'].' '
+                    .Carbon::parse($mappedArray['start'])->format('D').' of +'
+                    .$mappedArray['interval'].' '.$mappedArray['unit'];
             }
         }
 
