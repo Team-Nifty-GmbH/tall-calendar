@@ -4,41 +4,40 @@
         @show
     }"
      x-on:edit-calendar="editCalendar($event.detail)"
-     x-on:calendar-event-click="eventClick($event.detail); showModal()"
-     x-on:calendar-date-click="dateClick($event.detail)"
-     x-on:calendar-event-drop="eventClick($event.detail); saveEvent();"
 >
-    <div x-bind:id="id + '-calendar-event-edit'">
+    <div>
         @section('calendar-event-modal')
-        <x-modal.card :title="__('Edit Event')" x-on:close="this.calendarEventItemProxy = {};">
-            <x-tall-calendar::event-edit />
-            <x-slot name="footer">
-                <div class="flex justify-between gap-x-4">
-                    <div>
-                        <x-button
-                            x-show="calendarEvent.id"
-                            spinner
-                            flat
-                            negative
-                            :label="__('Delete')"
-                            x-on:click="deleteEvent()"
-                            x-show="calendarEvent.is_editable && calendarEvent.id"
-                        />
+        <x-modal name="calendar-event-modal">
+            <x-card :title="__('Edit Event')">
+                <x-tall-calendar::event-edit />
+                <x-slot name="footer">
+                    <div class="flex justify-between gap-x-4">
+                        <div>
+                            <x-button
+                                x-show="calendarEvent.id"
+                                spinner
+                                flat
+                                negative
+                                :label="__('Delete')"
+                                x-on:click="deleteEvent()"
+                                x-show="$wire.calendarEvent.is_editable && $wire.calendarEvent.id"
+                            />
+                        </div>
+                        <div class="flex">
+                            <x-button flat :label="__('Cancel')" x-on:click="close" />
+                            <x-button primary :label="__('Save')" x-on:click="saveEvent()" />
+                        </div>
                     </div>
-                    <div class="flex">
-                        <x-button flat :label="__('Cancel')" x-on:click="close" />
-                        <x-button primary :label="__('Save')" x-on:click="saveEvent()" />
-                    </div>
-                </div>
-            </x-slot>
-        </x-modal.card>
+                </x-slot>
+            </x-card>
+        </x-modal>
         @show
     </div>
     <x-card padding="none" class="lg:flex whitespace-nowrap">
         <div>
             @if($showCalendars)
-                <div x-bind:id="id + '-calendar-edit'">
-                    <x-modal.card :title="__('Edit Calendar')">
+                <x-modal name="calendar-modal">
+                    <x-card :title="__('Edit Calendar')">
                         <x-tall-calendar::calendar-edit />
                         <x-slot name="footer">
                             <div class="flex justify-between gap-x-4">
@@ -51,8 +50,8 @@
                                 </div>
                             </div>
                         </x-slot>
-                    </x-modal.card>
-                </div>
+                    </x-card>
+                </x-modal>
                 @section('calendar-list')
                 <div class="p-1.5 space-y-4">
                     <div x-data="{show: true}">
