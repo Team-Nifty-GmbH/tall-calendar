@@ -7,8 +7,10 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Inviteable;
 use WireUi\Traits\Actions;
@@ -29,12 +31,12 @@ class CalendarComponent extends Component
 
     private Collection $myCalendars;
 
-    public function mount()
+    public function mount(): void
     {
         $this->calendarEvent = ['start' => now(), 'end' => now()];
     }
 
-    public function getRules()
+    public function getRules(): array
     {
         return [
             'title' => 'required|string',
@@ -83,7 +85,7 @@ class CalendarComponent extends Component
             ?->toArray();
     }
 
-    public function getInvited(Model $event)
+    public function getInvited(Model $event): array
     {
         return $event->invitedModels()
             ->map(
@@ -98,7 +100,7 @@ class CalendarComponent extends Component
             ->toArray();
     }
 
-    public function getInvites()
+    public function getInvites(): array
     {
         return auth()->user()
             ->invites()
@@ -107,7 +109,7 @@ class CalendarComponent extends Component
             ->toArray();
     }
 
-    public function getCalendars()
+    public function getCalendars(): array
     {
         return array_merge(
             $this->getMyCalendars()->toArray(),
@@ -220,18 +222,19 @@ class CalendarComponent extends Component
         );
     }
 
-    public function deleteCalendar(int $calendar): bool
+    public function deleteCalendar(array $attributes): bool
     {
         $calendar = config('tall-calendar.models.calendar')::query()
-            ->whereKey($calendar)
+            ->whereKey($attributes['id'] ?? null)
             ->firstOrFail();
 
         return $calendar->delete();
     }
 
-    public function saveCalendar(array $attributes): array
+    public function saveCalendar(array $attributes): array|false
     {
-        $calendar = config('tall-calendar.models.calendar')::query()->findOrNew($attributes['id'] ?? null);
+        $calendar = config('tall-calendar.models.calendar')::query()
+            ->firstOrNew($attributes['id'] ?? null);
 
         $calendar->fromCalendarObject($attributes);
 
@@ -246,7 +249,7 @@ class CalendarComponent extends Component
         return $calendar->toCalendarObject(['group' => 'my']);
     }
 
-    public function saveEvent(array $attributes): array|bool
+    public function saveEvent(array $attributes): array|false
     {
         $this->skipRender();
         $validator = Validator::make($attributes, $this->getRules());
@@ -290,21 +293,87 @@ class CalendarComponent extends Component
         return $event->toCalendarEventObject();
     }
 
-    public function deleteEvent(int $event): bool
+    public function deleteEvent(array $attributes): bool
     {
         $event = config('tall-calendar.models.calendar_event')::query()
-            ->whereKey($event)
+            ->whereKey($attributes['id'] ?? null)
             ->firstOrFail();
 
         return $event->delete();
     }
 
-    public function inviteStatus(Inviteable $event, string $status, int $calendarId)
+    public function inviteStatus(Inviteable $event, string $status, int $calendarId): void
     {
         $event->status = $status;
         $event->model_calendar_id = $calendarId;
         $event->save();
 
         $this->skipRender();
+    }
+
+    #[Renderless]
+    public function showModal(): void
+    {
+        $this->js(
+            <<<'JS'
+               $openModal('calendar-event-modal');
+            JS
+        );
+    }
+
+    #[Renderless]
+    public function editCalendar(?array $calendar = null): void
+    {
+        $this->js(
+            <<<'JS'
+                $openModal('calendar-modal');
+            JS
+        );
+    }
+
+    #[Renderless]
+    public function onDateClick(array $eventInfo): void
+    {
+        $calendar = collect($this->getCalendars())->where('resourceEditable', true)->first();
+        $this->onEventClick([
+            'event' => [
+                'start' => Carbon::parse($eventInfo['dateStr'])->setHour(9)->toDateTimeString(),
+                'end' => Carbon::parse($eventInfo['dateStr'])->setHour(10)->toDateTimeString(),
+                'allDay' => false,
+                'calendar_id' => $calendar['id'] ?? null,
+                'is_editable' => $calendar['resourceEditable'] ?? false,
+                'invited' => [],
+            ],
+        ]);
+    }
+
+    #[Renderless]
+    public function onEventClick(array $eventInfo): void
+    {
+        $this->calendarEvent = array_merge(
+            Arr::pull($eventInfo['event'], 'extendedProps', []),
+            $eventInfo['event']
+        );
+
+        $this->showModal();
+    }
+
+    #[Renderless]
+    public function onEventDragStart(array $eventInfo): void
+    {
+    }
+
+    #[Renderless]
+    public function onEventDragStop(array $eventInfo): void
+    {
+    }
+
+    #[Renderless]
+    public function onEventDrop(array $eventInfo): void
+    {
+        $this->saveEvent(array_merge(
+            Arr::pull($eventInfo['event'], 'extendedProps', []),
+            $eventInfo['event']
+        ));
     }
 }

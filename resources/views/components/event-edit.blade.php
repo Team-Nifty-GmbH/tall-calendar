@@ -1,8 +1,8 @@
 <div class="grid grid-cols-1 gap-1.5" x-data="{errors: $wire.entangle('validationErrors')}">
     @section('event-edit.content')
-        <x-input x-ref="autofocus" :label="__('Title') . '*'" x-model="calendarEvent.title" x-bind:readonly="! calendarEvent.is_editable ?? false"/>
-        <x-textarea :label="__('Description')" x-model="calendarEvent.description" x-bind:readonly="! calendarEvent.is_editable ?? false"/>
-        <x-checkbox :label="__('all-day')" x-model="calendarEvent.allDay" x-bind:disabled="! calendarEvent.is_editable ?? false"/>
+        <x-input x-ref="autofocus" :label="__('Title') . '*'" wire:model="calendarEvent.title" x-bind:readonly="! $wire.calendarEvent.is_editable ?? false"/>
+        <x-textarea :label="__('Description')" wire:model="calendarEvent.description" x-bind:readonly="! $wire.calendarEvent.is_editable ?? false"/>
+        <x-checkbox :label="__('all-day')" wire:model="calendarEvent.allDay" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"/>
         <div class="grid grid-cols-3 items-center gap-1.5">
             <x-label>
                 {{__('Start')}}
@@ -10,17 +10,17 @@
             <x-input
                 id="calendar-event-start-date"
                 type="date"
-                x-bind:disabled="! calendarEvent.is_editable ?? false"
-                x-bind:value="dayjs(calendarEvent.start).format('YYYY-MM-DD')"
+                x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"
+                x-bind:value="dayjs($wire.calendarEvent.start).format('YYYY-MM-DD')"
                 x-on:change="setDateTime('start', $event)"
             />
             <x-input
                 id="calendar-event-start-time"
-                x-show="! calendarEvent.allDay"
+                x-show="! $wire.calendarEvent.allDay"
                 type="time"
-                x-bind:disabled="! calendarEvent.is_editable ?? false"
+                x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"
                 x-on:change="setDateTime('start', $event)"
-                x-bind:value="dayjs(calendarEvent.start).format('HH:mm')"
+                x-bind:value="dayjs($wire.calendarEvent.start).format('HH:mm')"
             />
         </div>
         <div class="grid grid-cols-3 items-center gap-1.5">
@@ -30,17 +30,17 @@
             <x-input
                 id="calendar-event-end-date"
                 type="date"
-                x-bind:disabled="! calendarEvent.is_editable ?? false"
-                x-bind:value="dayjs(calendarEvent.end).format('YYYY-MM-DD')"
+                x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"
+                x-bind:value="dayjs($wire.calendarEvent.end).format('YYYY-MM-DD')"
                 x-on:change="setDateTime('end', $event)"
             />
             <x-input
                 id="calendar-event-end-time"
-                x-show="! calendarEvent.allDay"
+                x-show="! $wire.calendarEvent.allDay"
                 type="time"
-                x-bind:disabled="! calendarEvent.is_editable ?? false"
+                x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"
                 x-on:change="setDateTime('end', $event)"
-                x-bind:value="dayjs(calendarEvent.end).format('HH:mm')"
+                x-bind:value="dayjs($wire.calendarEvent.end).format('HH:mm')"
             />
         </div>
         <div x-show="calendarEvent.is_invited">
@@ -85,16 +85,16 @@
             </x-select>
         </div>
         <div>
-            <div class="grid grid-cols-1 gap-1.5" x-show="calendarEvent.is_editable ?? false" x-on:click.outside="search = false">
+            <div class="grid grid-cols-1 gap-1.5" x-show="$wire.calendarEvent.is_editable ?? false" x-on:click.outside="search = false">
                 <x-label for="invite" :label="__('Invites')" />
-                <template x-for="invited in calendarEvent.invited">
+                <template x-for="invited in $wire.calendarEvent.invited">
                     <div class="flex gap-1.5">
                         <x-button.circle
                             negative
                             xs
                             icon="trash"
-                            x-bind:disabled="! calendarEvent.is_editable ?? false"
-                            x-on:click="calendarEvent.invited.splice(calendarEvent.invited.indexOf(invited), 1)"
+                            x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"
+                            x-on:click="$wire.calendarEvent.invited.splice($wire.calendarEvent.invited.indexOf(invited), 1)"
                         />
                         <template x-if="invited.pivot?.status === 'accepted'">
                             <x-button.circle
@@ -136,23 +136,23 @@
                     option-label="label"
                     :placeholder="__('Add invite')"
                     :template="[
-                                    'name'   => 'user-option',
-                                ]"
+                        'name'   => 'user-option',
+                    ]"
                     :async-data="[
-                                    'api' => route('search', \FluxErp\Models\User::class),
-                                    'method' => 'POST',
-                                    'params' => [
-                                        'with' => 'media',
-                                        'where' => [
-                                            [
-                                                'id',
-                                                '!=',
-                                                auth()->user()->id
-                                            ]
-                                        ],
-                                    ]
-                                ]"
-                    x-on:selected="calendarEvent.invited.push($event.detail); clear(); asyncData.params.where.push(['id', '!=', $event.detail.id])"
+                        'api' => route('search', \FluxErp\Models\User::class),
+                        'method' => 'POST',
+                        'params' => [
+                            'with' => 'media',
+                            'where' => [
+                                [
+                                    'id',
+                                    '!=',
+                                    auth()->user()->id
+                                ]
+                            ],
+                        ]
+                    ]"
+                    x-on:selected="$wire.calendarEvent.invited.push($event.detail); clear(); asyncData.params.where.push(['id', '!=', $event.detail.id])"
                 />
             </div>
         </div>
