@@ -80,7 +80,18 @@ const calendar = () => {
                     return false;
                 }
 
-                if (! this.$wire.calendarEvent?.id) {
+                if (event instanceof Array) {
+                    event.map(item => item.id)
+                        .filter((value, index, self) => self.indexOf(value) === index)
+                        .forEach((id) => {
+                            this.calendar.getEventById(id)?.remove();
+                        });
+
+                    event.forEach((e) => {
+                        this.calendar.addEvent(e, this.calendar.getEventSourceById(e.calendar_id));
+                    });
+                } else {
+                    this.calendar.getEventById(event.id)?.remove();
                     this.calendar.addEvent(event, this.calendar.getEventSourceById(event.calendar_id));
                 }
 
@@ -111,8 +122,6 @@ const calendar = () => {
                 if (success) {
                     this.close();
                 }
-
-                this.calendarEventItemProxy.remove();
             });
         },
         calendar: null,
@@ -132,6 +141,7 @@ const calendar = () => {
                 if (this.calendarId === null) {
                     this.calendarId = calendar.id;
                 }
+
                calendar.events = (info) => this.$wire.getEvents(info, calendar);
                this.activeCalendars.push(calendar.id);
             });

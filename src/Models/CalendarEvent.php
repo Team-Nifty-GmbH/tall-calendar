@@ -167,6 +167,19 @@ class CalendarEvent extends Model
             }
         }
 
+        switch ($mappedArray['repeat_radio']) {
+            case 'repeat_end':
+                $mappedArray['recurrences'] = null;
+                break;
+            case 'recurrences':
+                $mappedArray['repeat_end'] = null;
+                break;
+            default:
+                $mappedArray['recurrences'] = null;
+                $mappedArray['repeat_end'] = null;
+                break;
+        }
+
         $this->fill($mappedArray);
 
         return $this;

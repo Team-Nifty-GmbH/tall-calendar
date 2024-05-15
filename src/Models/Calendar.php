@@ -19,6 +19,7 @@ class Calendar extends Model
 
     protected $casts = [
         'has_notifications' => 'boolean',
+        'has_repeatable_events' => 'boolean',
         'is_editable' => 'boolean',
         'is_public' => 'boolean',
     ];
@@ -61,6 +62,7 @@ class Calendar extends Model
                 'name' => $this->name,
                 'color' => $this->color,
                 'resourceEditable' => $this->is_editable,
+                'hasRepeatableEvents' => $this->has_repeatable_events ?? true,
                 'isPublic' => $this->is_public,
                 'isShared' => $this->calendarables_count > 1,
             ],

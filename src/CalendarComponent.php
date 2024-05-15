@@ -31,6 +31,12 @@ class CalendarComponent extends Component
     #[Locked]
     public bool $calendarEventWasRepeatable = false;
 
+    #[Locked]
+    public array $calendarPeriod = [
+        'start' => null,
+        'end' => null,
+    ];
+
     public array $validationErrors = [];
 
     public string $confirmSave = 'future';
@@ -55,12 +61,12 @@ class CalendarComponent extends Component
             'description' => 'nullable|string',
 
             'has_repeats' => 'boolean',
-            'interval' => 'required_if:has_repeats,true|integer|min:1',
-            'unit' => 'required_if:has_repeats,true|in:days,weeks,months,years',
+            'interval' => 'exclude_unless:has_repeats,true|required_if:has_repeats,true|integer|min:1',
+            'unit' => 'exclude_unless:has_repeats,true|required_if:has_repeats,true|in:days,weeks,months,years',
             'weekdays' => 'exclude_unless:unit,weeks|required_if:unit,weeks|array',
             'weekdays.*' => 'required|in:Mon,Tue,Wed,Thu,Fri,Sat,Sun',
             'monthly' => 'exclude_unless:unit,months|required_if:unit,months|in:day,first,second,third,fourth,last',
-            'repeat_radio' => 'nullable|in:repeat_end,recurrences',
+            'repeat_radio' => 'exclude_unless:has_repeats,true|nullable|in:repeat_end,recurrences',
             'repeat_end' => [
                 'exclude_unless:repeat_radio,repeat_end',
                 'required_if:repeat_radio,repeat_end',
@@ -83,6 +89,11 @@ class CalendarComponent extends Component
 
     public function getEvents(array $info, array $calendarAttributes): array
     {
+        $this->calendarPeriod = [
+            'start' => Carbon::parse($info['startStr'])->toDateTimeString(),
+            'end' => Carbon::parse($info['endStr'])->toDateTimeString(),
+        ];
+
         $calendar = config('tall-calendar.models.calendar')::query()->find($calendarAttributes['id']);
 
         $calendarEvents = $calendar->calendarEvents()
@@ -109,13 +120,13 @@ class CalendarComponent extends Component
                     ->each(fn ($event) => $event->is_invited = true)
             );
 
-        return $this->calculateRepeatableEvents($calendar, $info, $calendarEvents)
-            ->map(function ($event) use ($calendarAttributes) {
+        return $this->calculateRepeatableEvents($calendar, $calendarEvents)
+            ->map(function ($event) use ($calendarAttributes, $calendar) {
                 $invited = $this->getInvited($event);
 
                 return $event->toCalendarEventObject([
                     'is_editable' => $calendarAttributes['permission'] !== 'reader', 'invited' => $invited,
-                    'is_repeatable' => true,
+                    'is_repeatable' => $calendar->has_repeatable_events ?? false,
                     'has_repeats' => ! is_null($event->repeat),
                 ]);
             })
@@ -303,29 +314,33 @@ class CalendarComponent extends Component
             )
             ->firstOrNew();
 
-        if ($attributes['has_repeats']) {
+        $originalEvent = null;
+        if ($this->calendarEventWasRepeatable && $this->confirmSave !== 'all') {
+            if ($this->confirmSave === 'this' && $attributes['has_repeats'] ?? false) {
+                $this->confirmSave = 'future';
+            }
+
             // If confirm option is "this" or "selected and future", create new event with given values
-            if (in_array($this->confirmOption, ['this', 'future'])) {
+            if (in_array($this->confirmSave, ['this', 'future'])) {
                 $originalEvent = $event;
                 $event = $event->replicate(['ulid']);
             }
 
-            $event->fromCalendarEventObject($attributes);
-
             // If confirm option is "this", add current start date to excluded dates
             // If confirm option is "selected and future", set repeat_end of original event to current start date
-            if ($this->confirmOption === 'this') {
+            if ($this->confirmSave === 'this') {
                 $originalEvent->excluded = array_merge(
                     $originalEvent->excluded ?: [],
                     [Carbon::parse($attributes['start'])->format('Y-m-d H:i:s')]
                 );
                 $originalEvent->save();
-            } elseif ($this->confirmOption === 'future') {
+            } elseif ($this->confirmSave === 'future') {
                 $originalEvent->repeat_end = $originalEvent->start->subSecond();
                 $originalEvent->save();
             }
         }
 
+        $event->fromCalendarEventObject($attributes);
         $event->save();
 
         $invites = collect($attributes['invited'] ?? [])
@@ -354,7 +369,21 @@ class CalendarComponent extends Component
             );
         }
 
-        return $event->toCalendarEventObject();
+        $calendarEvents = collect();
+
+        foreach (collect([$event, $originalEvent])->filter() as $calendarEvent) {
+            foreach ($this->calculateRepetitionsFromEvent($calendarEvent->toArray()) as $repetition) {
+                $calendarEvents->push($repetition);
+            }
+        }
+
+        return $calendarEvents
+            ->map(fn ($event) => $event->toCalendarEventObject([
+                'is_editable' => $attributes['is_editable'] ?? false,
+                'is_repeatable' => $attributes['is_repeatable'] ?? false,
+                'has_repeats' => ! is_null($event->repeat),
+            ]))
+            ->toArray();
     }
 
     public function deleteEvent(array $attributes): bool
@@ -368,10 +397,10 @@ class CalendarComponent extends Component
             ->firstOrFail();
 
         if (! $event->repeat) {
-            $this->confirmOption = 'all';
+            $this->confirmDelete = 'all';
         }
 
-        return match ($this->confirmOption) {
+        return match ($this->confirmDelete) {
             'this' => $event->fill([
                 'excluded' => array_merge(
                     $event->excluded ?: [],
@@ -425,6 +454,7 @@ class CalendarComponent extends Component
                 'allDay' => false,
                 'calendar_id' => $calendar['id'] ?? null,
                 'is_editable' => $calendar['resourceEditable'] ?? false,
+                'is_repeatable' => $calendar['hasRepeatableEvents'] ?? false,
                 'invited' => [],
             ],
         ]);
@@ -434,6 +464,16 @@ class CalendarComponent extends Component
     public function onEventClick(array $eventInfo): void
     {
         $this->calendarEvent = array_merge(
+            [
+                'interval' => null,
+                'unit' => 'days',
+                'weekdays' => [],
+                'monthly' => null,
+                'repeat_radio' => null,
+                'repeat_end' => null,
+                'recurrences' => null,
+                'has_repeats' => false,
+            ],
             Arr::pull($eventInfo['event'], 'extendedProps', []),
             $eventInfo['event']
         );
@@ -464,74 +504,83 @@ class CalendarComponent extends Component
         ));
     }
 
-    protected function calculateRepeatableEvents($calendar, array $info, Collection $calendarEvents): Collection
+    protected function calculateRepeatableEvents($calendar, Collection $calendarEvents): Collection
     {
         $repeatables = $calendar->calendarEvents()
             ->whereNotNull('repeat')
-            ->whereDate('start', '<', $info['end'])
-            ->where(fn ($query) => $query->whereDate('repeat_end', '>', $info['start'])
+            ->whereDate('start', '<', $this->calendarPeriod['end'])
+            ->where(fn ($query) => $query->whereDate('repeat_end', '>', $this->calendarPeriod['start'])
                 ->orWhereNull('repeat_end')
             )
             ->get();
 
         foreach ($repeatables as $repeatable) {
-            $recurrences = $repeatable->recurrences;
-            $i = 0;
-            for ($j = count($repeatValues = explode(',', $repeatable->repeat)); $j > 0; $j--) {
-                if ($repeatable->recurrences) {
-                    if ($recurrences < 1) {
-                        continue;
-                    }
-
-                    $datePeriod = new DatePeriod(
-                        Carbon::parse($repeatable->start),
-                        DateInterval::createFromDateString($repeatValues[$i]),
-                        ($count = (int) ceil($recurrences / $j)) - (int) ($i === 0), // subtract 1, because start date does not count towards recurrences limit
-                        (int) ($i !== 0) // 1 = Exclude start date
-                    );
-
-                    $recurrences -= $count;
-                } else {
-                    $datePeriod = new DatePeriod(
-                        Carbon::parse($repeatable->start),
-                        DateInterval::createFromDateString($repeatValues[$i]),
-                        Carbon::parse(is_null($repeatable->repeat_end) ?
-                            $info['end'] : min([$repeatable->repeat_end, $info['end']])
-                        ),
-                        (int) ($i !== 0)
-                    );
-                }
-
-                // filter dates in between start and end
-                $dates = array_filter(
-                    iterator_to_array($datePeriod),
-                    fn ($item) => ($date = $item->format('Y-m-d H:i:s')) > $info['start'] && $date < $info['end']
-                        && ! in_array($date, $repeatable->excluded ?: [])
-                );
-
-                $events = array_map(function ($date) use ($repeatable) {
-                    $interval = date_diff(Carbon::parse($repeatable->start), Carbon::parse($repeatable->end));
-
-                    return new (config('tall-calendar.models.calendar_event'))(
-                        array_merge(
-                            $repeatable->toArray(),
-                            [
-                                'start' => ($start = Carbon::parse($repeatable->start)->setDateFrom($date))
-                                    ->format('Y-m-d H:i:s'),
-                                'end' => $start->add($interval)->format('Y-m-d H:i:s'),
-                            ]
-                        )
-                    );
-                }, $dates);
-
-                foreach ($events as $event) {
-                    $calendarEvents->push($event);
-                }
-
-                $i++;
+            foreach ($this->calculateRepetitionsFromEvent($repeatable->toArray()) as $event) {
+                $calendarEvents->push($event);
             }
         }
 
         return $calendarEvents;
+    }
+
+    protected function calculateRepetitionsFromEvent(array $event): array
+    {
+        $i = 0;
+        $events = [];
+        $recurrences = data_get($event, 'recurrences');
+
+        for ($j = count($repeatValues = explode(',', data_get($event, 'repeat'))); $j > 0; $j--) {
+            if (data_get($event, 'recurrences')) {
+                if ($recurrences < 1) {
+                    continue;
+                }
+
+                $datePeriod = new DatePeriod(
+                    Carbon::parse(data_get($event, 'start')),
+                    DateInterval::createFromDateString($repeatValues[$i]),
+                    ($count = (int) ceil($recurrences / $j)) - (int) ($i === 0), // subtract 1, because start date does not count towards recurrences limit
+                    (int) ($i !== 0) // 1 = Exclude start date
+                );
+
+                $recurrences -= $count;
+            } else {
+                $datePeriod = new DatePeriod(
+                    Carbon::parse(data_get($event, 'start')),
+                    DateInterval::createFromDateString($repeatValues[$i]),
+                    Carbon::parse(is_null(data_get($event, 'repeat_end')) ?
+                        $this->calendarPeriod['end'] :
+                        min([data_get($event, 'repeat_end'), $this->calendarPeriod['end']])
+                    ),
+                    (int) ($i !== 0)
+                );
+            }
+
+            // filter dates in between start and end
+            $dates = array_filter(
+                iterator_to_array($datePeriod),
+                fn ($item) => ($date = $item->format('Y-m-d H:i:s')) > $this->calendarPeriod['start']
+                    && $date < $this->calendarPeriod['end']
+                    && ! in_array($date, data_get($event, 'excluded') ?: [])
+            );
+
+            $events = array_merge($events, array_map(function ($date) use ($event) {
+                $interval = date_diff(Carbon::parse(data_get($event, 'start')), Carbon::parse(data_get($event, 'end')));
+
+                return (new (config('tall-calendar.models.calendar_event'))())->forceFill(
+                    array_merge(
+                        $event,
+                        [
+                            'start' => ($start = Carbon::parse(data_get($event, 'start'))->setDateFrom($date))
+                                ->format('Y-m-d H:i:s'),
+                            'end' => $start->add($interval)->format('Y-m-d H:i:s'),
+                        ]
+                    )
+                );
+            }, $dates));
+
+            $i++;
+        }
+
+        return $events;
     }
 }

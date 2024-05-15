@@ -182,13 +182,13 @@
             </x-label>
             <x-radio :label="__('Never')" :value="null" x-model="$wire.calendarEvent.repeat_radio" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false" />
             <div class="grid grid-cols-2 items-center gap-1.5">
-                <x-radio :label="__('At')" value="repeat_end" x-model="$wire.calendarEvent.repeat_radio" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false" />
+                <x-radio :label="__('Date At')" value="repeat_end" x-model="$wire.calendarEvent.repeat_radio" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false" />
                 <x-input
                     id="calendar-event-repeat-end-date"
                     type="date"
                     x-bind:disabled="(! $wire.calendarEvent.is_editable ?? false) || $wire.calendarEvent.repeat_radio !== 'repeat_end'"
                     x-bind:value="dayjs($wire.calendarEvent.repeat_end).format('YYYY-MM-DD')"
-                    x-on:change="setDateTime('repeat_end', $event)"
+                    x-on:change="$wire.calendarEvent.repeat_end = dayjs($event.target.value).format('YYYY-MM-DD')"
                 />
                 <x-radio :label="__('After amount of events')" value="recurrences" x-model="$wire.calendarEvent.repeat_radio" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false" />
                 <x-inputs.number x-model="$wire.calendarEvent.recurrences" x-bind:disabled="(! $wire.calendarEvent.is_editable ?? false) || $wire.calendarEvent.repeat_radio !== 'recurrences'" />

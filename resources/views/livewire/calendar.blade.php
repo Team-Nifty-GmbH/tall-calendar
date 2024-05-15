@@ -29,7 +29,6 @@
                                         },
                                         reject: {
                                             label: '{{ __('Cancel') }}',
-                                            execute: () => close()
                                         }
                                     })"
                                 />
@@ -51,7 +50,6 @@
                                             },
                                             reject: {
                                                 label: '{{ __('Cancel') }}',
-                                                execute: () => close()
                                             }
                                         }) :
                                         saveEvent();
@@ -64,16 +62,16 @@
             </x-modal>
             <x-dialog id="edit-repeatable-event-dialog" :title="__('Edit Repeatable Event')">
                 <div x-show="! $wire.calendarEvent.has_repeats">
-                    <x-radio :label="__('This event')" value="this" wire:model.live="confirmSave"/>
+                    <x-radio :label="__('This event')" value="this" wire:model="confirmSave"/>
                 </div>
-                <x-radio :label="__('This event and following')" value="future" wire:model.live="confirmSave"/>
-                <x-radio :label="__('All events')" value="all" wire:model.live="confirmSave"/>
+                <x-radio :label="__('This event and following')" value="future" wire:model="confirmSave"/>
+                <x-radio :label="__('All events')" value="all" wire:model="confirmSave"/>
             </x-dialog>
             <x-dialog id="delete-event-dialog" :title="__('Confirm Delete Event')">
                 <div x-show="$wire.calendarEventWasRepeatable">
-                    <x-radio :label="__('This event')" value="this" wire:model.live="confirmDelete"/>
-                    <x-radio :label="__('This event and following')" value="future" wire:model.live="confirmDelete"/>
-                    <x-radio :label="__('All events')" value="all" wire:model.live="confirmDelete"/>
+                    <x-radio :label="__('This event')" value="this" wire:model="confirmDelete"/>
+                    <x-radio :label="__('This event and following')" value="future" wire:model="confirmDelete"/>
+                    <x-radio :label="__('All events')" value="all" wire:model="confirmDelete"/>
                 </div>
             </x-dialog>
         @show
