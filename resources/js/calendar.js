@@ -53,6 +53,8 @@ const calendar = () => {
                     return false;
                 }
 
+                calendar.group = calendar.group || 'my';
+
                 let index = this.calendars.findIndex(c => c.id === calendar.id);
                 this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
                 this.calendarId = calendar.id;
@@ -120,6 +122,7 @@ const calendar = () => {
         deleteEvent() {
             this.$wire.deleteEvent(this.$wire.calendarEvent).then(success => {
                 if (success) {
+                    this.calendar.getEventById(this.$wire.calendarEvent.id)?.remove();
                     this.close();
                 }
             });

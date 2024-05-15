@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Renderless;
 use Livewire\Component;
+use TeamNiftyGmbH\Calendar\Models\Calendar;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Inviteable;
 use WireUi\Traits\Actions;
 
@@ -174,7 +175,7 @@ class CalendarComponent extends Component
             ->wherePivot('permission', 'owner')
             ->withCount('calendarables')
             ->get()
-            ->map(function ($calendar) {
+            ->map(function (Calendar $calendar) {
                 return $calendar->toCalendarObject(
                     [
                         'permission' => $calendar['pivot']['permission'],
@@ -191,7 +192,7 @@ class CalendarComponent extends Component
             ->withPivot('permission')
             ->wherePivot('permission', '!=', 'owner')
             ->get()
-            ->map(function ($calendar) {
+            ->map(function (Calendar $calendar) {
                 return $calendar->toCalendarObject(
                     [
                         'permission' => $calendar['pivot']['permission'],
@@ -208,7 +209,7 @@ class CalendarComponent extends Component
             ->whereNotIn('id', $this->myCalendars->pluck('id'))
             ->whereNotIn('id', $this->sharedWithMe->pluck('id'))
             ->get()
-            ->map(function ($calendar) {
+            ->map(function (Calendar $calendar) {
                 return $calendar->toCalendarObject([
                     'permission' => 'reader',
                     'group' => 'public',
@@ -297,6 +298,7 @@ class CalendarComponent extends Component
         return $calendar->toCalendarObject(['group' => 'my']);
     }
 
+    #[Renderless]
     public function saveEvent(array $attributes): array|false
     {
         $this->skipRender();
