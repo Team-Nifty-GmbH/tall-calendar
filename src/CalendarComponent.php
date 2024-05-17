@@ -642,7 +642,7 @@ class CalendarComponent extends Component
                                     ->format('Y-m-d H:i:s'),
                                 'end' => $start->add($interval)->format('Y-m-d H:i:s'),
                             ],
-                            ['id' => data_get($event, 'id') . '|' . $key]
+                            ['id' => data_get($event, 'id').'|'.$key]
                         )
                     ),
                 ];
