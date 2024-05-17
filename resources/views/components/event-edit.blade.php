@@ -43,7 +43,7 @@
                 x-bind:value="dayjs($wire.calendarEvent.end).format('HH:mm')"
             />
         </div>
-        <div x-show="$wire.calendarEvent.is_repeatable">
+        <div class="mb-2" x-show="$wire.calendarEvent.is_repeatable">
             <x-checkbox
                 :label="__('Repeatable')"
                 wire:model="calendarEvent.has_repeats"
@@ -53,7 +53,7 @@
         <div x-show="$wire.calendarEvent.has_repeats && $wire.calendarEvent.is_repeatable">
             <div class="grid grid-cols-3 items-center gap-1.5">
                 <x-label>
-                    {{ __('Repeat') }}
+                    {{ __('Repeat every') }}
                 </x-label>
                 <x-inputs.number wire:model="calendarEvent.interval" :min="1" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false" />
                 <x-select
@@ -157,27 +157,27 @@
                     x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"
                 >
                     <x-select.option value="day">
-                        <span x-text="'{{ __('Monthly at') }} ' + dayjs($wire.calendarEvent.start).format('DD') + '.'"></span>
+                        <span x-text="'{{ __('Monthly on') }} ' + dayjs($wire.calendarEvent.start).format('DD') + '.'"></span>
                     </x-select.option>
                     <x-select.option value="first">
-                        <span x-text="'{{ __('Monthly at first') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
+                        <span x-text="'{{ __('Monthly on first') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
                     </x-select.option>
                     <x-select.option value="second">
-                        <span x-text="'{{ __('Monthly at second') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
+                        <span x-text="'{{ __('Monthly on second') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
                     </x-select.option>
                     <x-select.option value="third">
-                        <span x-text="'{{ __('Monthly at third') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
+                        <span x-text="'{{ __('Monthly on third') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
                     </x-select.option>
                     <x-select.option value="fourth">
-                        <span x-text="'{{ __('Monthly at fourth') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
+                        <span x-text="'{{ __('Monthly on fourth') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
                     </x-select.option>
                     <x-select.option value="last">
-                        <span x-text="'{{ __('Monthly at last') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
+                        <span x-text="'{{ __('Monthly on last') }} ' + dayjs($wire.calendarEvent.start).format('dddd')"></span>
                     </x-select.option>
                 </x-select>
             </template>
 
-            <x-label class="mt-2 mb-4">
+            <x-label class="mt-4 mb-2">
                 {{ __('Repeat end') }}
             </x-label>
             <x-radio :label="__('Never')" :value="null" x-model="$wire.calendarEvent.repeat_radio" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false" />
