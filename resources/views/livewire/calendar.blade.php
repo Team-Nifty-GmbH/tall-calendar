@@ -88,7 +88,7 @@
                                     <x-button x-show="calendarItem.id" flat negative :label="__('Delete')" x-on:click="deleteCalendar()" />
                                 </div>
                                 <div class="flex">
-                                    <x-button flat :label="__('Cancel')" x-on:click="close" />
+                                    <x-button flat :label="__('Cancel')" x-on:click="resetCalendarItem; close();" />
                                     <x-button primary :label="__('Save')" x-on:click="saveCalendar()" />
                                 </div>
                             </div>

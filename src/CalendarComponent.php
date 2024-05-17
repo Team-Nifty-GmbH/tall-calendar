@@ -30,6 +30,9 @@ class CalendarComponent extends Component
     public array $calendarEvent = [];
 
     #[Locked]
+    public array $oldCalendarEvent = [];
+
+    #[Locked]
     public bool $calendarEventWasRepeatable = false;
 
     #[Locked]
@@ -301,7 +304,19 @@ class CalendarComponent extends Component
     #[Renderless]
     public function saveEvent(array $attributes): array|false
     {
-        $this->skipRender();
+        if (! data_get($attributes, 'has_repeats')) {
+            $attributes = array_merge($attributes, [
+                'interval' => null,
+                'unit' => null,
+                'weekdays' => [],
+                'monthly' => null,
+                'repeat' => null,
+                'repeat_radio' => null,
+                'repeat_end' => null,
+                'recurrences' => null,
+            ]);
+        }
+
         $validator = Validator::make($attributes, $this->getRules());
         if ($validator->fails()) {
             return false;
@@ -333,13 +348,21 @@ class CalendarComponent extends Component
             if ($this->confirmSave === 'this') {
                 $originalEvent->excluded = array_merge(
                     $originalEvent->excluded ?: [],
-                    [Carbon::parse($attributes['start'])->format('Y-m-d H:i:s')]
+                    [Carbon::parse($this->oldCalendarEvent['start'])->format('Y-m-d H:i:s')]
                 );
                 $originalEvent->save();
             } elseif ($this->confirmSave === 'future') {
-                $originalEvent->repeat_end = $originalEvent->start->subSecond();
+                $attributes['excluded'] = null;
+
+                $originalEvent->repeat_end = Carbon::parse($this->oldCalendarEvent['start'])
+                    ->subSecond()
+                    ->toDateTimeString();
                 $originalEvent->save();
             }
+        }
+
+        if ($this->confirmSave === 'all') {
+            $attributes['excluded'] = [];
         }
 
         $event->fromCalendarEventObject($attributes);
@@ -388,7 +411,7 @@ class CalendarComponent extends Component
             ->toArray();
     }
 
-    public function deleteEvent(array $attributes): bool
+    public function deleteEvent(array $attributes): array|false
     {
         $event = config('tall-calendar.models.calendar_event')::query()
             ->when(
@@ -402,18 +425,28 @@ class CalendarComponent extends Component
             $this->confirmDelete = 'all';
         }
 
-        return match ($this->confirmDelete) {
+        $result = match ($this->confirmDelete) {
             'this' => $event->fill([
                 'excluded' => array_merge(
                     $event->excluded ?: [],
-                    [Carbon::parse($this->calendarEvent['start'])->format('Y-m-d H:i:s')]
+                    [Carbon::parse($attributes['start'])->format('Y-m-d H:i:s')]
                 ),
             ])->save(),
             'future' => $event->fill([
-                'repeat_end' => Carbon::parse($this->calendarEvent['start'])->subSecond()->format('Y-m-d H:i:s'),
+                'repeat_end' => Carbon::parse($attributes['start'])->subSecond()->format('Y-m-d H:i:s'),
             ])->save(),
             default => $event->delete()
         };
+
+        if (! $result) {
+            return $result;
+        }
+
+        return [
+            'id' => $event->id,
+            'confirmOption' => $this->confirmDelete,
+            'repetition' => $attributes['repetition'] ?? null,
+        ];
     }
 
     public function inviteStatus(Inviteable $event, string $status, int $calendarId): void
@@ -480,6 +513,14 @@ class CalendarComponent extends Component
             $eventInfo['event']
         );
 
+        if (data_get($this->calendarEvent, 'id')) {
+            $explodedId = explode('|', $this->calendarEvent['id']);
+            $this->calendarEvent['id'] = $explodedId[0];
+            $this->calendarEvent['repetition'] = $explodedId[1] ?? null;
+        }
+
+        $this->oldCalendarEvent = $this->calendarEvent;
+
         $this->calendarEventWasRepeatable = $this->calendarEvent['has_repeats'] ?? false;
         $this->confirmSave = 'future';
         $this->confirmDelete = 'this';
@@ -500,10 +541,23 @@ class CalendarComponent extends Component
     #[Renderless]
     public function onEventDrop(array $eventInfo): void
     {
-        $this->saveEvent(array_merge(
+        $event = array_merge(
             Arr::pull($eventInfo['event'], 'extendedProps', []),
-            $eventInfo['event']
-        ));
+            $eventInfo['event'],
+            [
+                'has_repeats' => false,
+            ]
+        );
+        $event['id'] = explode('|', data_get($event, 'id', ''))[0] ?: null;
+
+        $this->oldCalendarEvent = array_merge(
+            Arr::pull($eventInfo['oldEvent'], 'extendedProps', []),
+            $eventInfo['oldEvent']
+        );
+        $this->calendarEventWasRepeatable = $this->oldCalendarEvent['has_repeats'] ?? false;
+        $this->confirmSave = 'this';
+
+        $this->saveEvent($event);
     }
 
     protected function calculateRepeatableEvents($calendar, Collection $calendarEvents): Collection
@@ -525,13 +579,20 @@ class CalendarComponent extends Component
         return $calendarEvents;
     }
 
-    protected function calculateRepetitionsFromEvent(array $event): array
+    protected function calculateRepetitionsFromEvent(array|Model $event): array
     {
+        if (! ($repeatString = data_get($event, 'repeat'))) {
+            return [
+                $event instanceof Model ?
+                    $event : (new (config('tall-calendar.models.calendar_event'))())->forceFill($event),
+            ];
+        }
+
         $i = 0;
         $events = [];
         $recurrences = data_get($event, 'recurrences');
 
-        for ($j = count($repeatValues = explode(',', data_get($event, 'repeat'))); $j > 0; $j--) {
+        for ($j = count($repeatValues = explode(',', $repeatString)); $j > 0; $j--) {
             if (data_get($event, 'recurrences')) {
                 if ($recurrences < 1) {
                     continue;
@@ -563,22 +624,29 @@ class CalendarComponent extends Component
                 fn ($item) => ($date = $item->format('Y-m-d H:i:s')) > $this->calendarPeriod['start']
                     && $date < $this->calendarPeriod['end']
                     && ! in_array($date, data_get($event, 'excluded') ?: [])
+                    && (
+                        ! data_get($event, 'repeat_end')
+                        || $date < Carbon::parse(data_get($event, 'repeat_end'))->toDateTimeString()
+                    )
             );
 
-            $events = array_merge($events, array_map(function ($date) use ($event) {
+            $events = array_merge($events, Arr::mapWithKeys($dates, function ($date, $key) use ($event) {
                 $interval = date_diff(Carbon::parse(data_get($event, 'start')), Carbon::parse(data_get($event, 'end')));
 
-                return (new (config('tall-calendar.models.calendar_event'))())->forceFill(
-                    array_merge(
-                        $event,
-                        [
-                            'start' => ($start = Carbon::parse(data_get($event, 'start'))->setDateFrom($date))
-                                ->format('Y-m-d H:i:s'),
-                            'end' => $start->add($interval)->format('Y-m-d H:i:s'),
-                        ]
-                    )
-                );
-            }, $dates));
+                return [
+                    $key => (new (config('tall-calendar.models.calendar_event'))())->forceFill(
+                        array_merge(
+                            $event,
+                            [
+                                'start' => ($start = Carbon::parse(data_get($event, 'start'))->setDateFrom($date))
+                                    ->format('Y-m-d H:i:s'),
+                                'end' => $start->add($interval)->format('Y-m-d H:i:s'),
+                            ],
+                            ['id' => data_get($event, 'id') . '|' . $key]
+                        )
+                    ),
+                ];
+            }));
 
             $i++;
         }
