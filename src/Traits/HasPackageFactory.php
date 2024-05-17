@@ -11,8 +11,8 @@ trait HasPackageFactory
     protected static function newFactory()
     {
         return app('TeamNiftyGmbH\Calendar\Database\Factories\\'
-            .class_basename(static::class)
-            .'Factory'
+            . class_basename(static::class)
+            . 'Factory'
         );
     }
 }
