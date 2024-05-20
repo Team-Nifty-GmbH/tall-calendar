@@ -1,7 +1,7 @@
 const calendar = () => {
     return {
         calendarItem: {},
-        calendarEventItemProxy: {},
+        calendarItemProxy: {},
         parseDateTime(event, locale, property) {
             const dateTime = new Date(event.start);
             let config = null;
@@ -45,6 +45,9 @@ const calendar = () => {
         },
         editCalendar(calendar) {
             this.calendarItem = calendar;
+            this.calendarItemProxy = {
+                ...calendar
+            };
             this.$wire.editCalendar(calendar);
         },
         saveCalendar() {
@@ -52,6 +55,8 @@ const calendar = () => {
                 if (calendar === false) {
                     return false;
                 }
+
+                calendar.group = calendar.group || 'my';
 
                 let index = this.calendars.findIndex(c => c.id === calendar.id);
                 this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
@@ -74,13 +79,33 @@ const calendar = () => {
                 this.calendars.splice(this.calendars.findIndex(c => c.id === this.calendarItem.id), 1);
             });
         },
+        resetCalendarItem() {
+            let index = this.calendars.findIndex(c => c.id === this.calendarItemProxy.id);
+
+            if (index !== -1) {
+                this.calendars.splice(index, 1, this.calendarItemProxy);
+            }
+        },
         saveEvent() {
             this.$wire.saveEvent(this.$wire.calendarEvent).then(event => {
                 if (event === false) {
                     return false;
                 }
 
-                if (! this.$wire.calendarEvent?.id) {
+                if (event instanceof Array) {
+                    event.map(item => String(item.id).split('|')[0])
+                        .filter((value, index, self) => self.indexOf(value) === index)
+                        .forEach((id) => {
+                            this.calendar.getEvents()
+                                .filter(filter => filter.id.split('|')[0] === String(id))
+                                .forEach(e => e.remove())
+                        });
+
+                    event.forEach((e) => {
+                        this.calendar.addEvent(e, this.calendar.getEventSourceById(e.calendar_id));
+                    });
+                } else {
+                    this.calendar.getEventById(event.id)?.remove();
                     this.calendar.addEvent(event, this.calendar.getEventSourceById(event.calendar_id));
                 }
 
@@ -107,12 +132,35 @@ const calendar = () => {
             }
         },
         deleteEvent() {
-            this.$wire.deleteEvent(this.$wire.calendarEvent).then(success => {
-                if (success) {
-                    this.close();
+            this.$wire.deleteEvent(this.$wire.calendarEvent).then(event => {
+                if (event === false) {
+                    return false;
                 }
 
-                this.calendarEventItemProxy.remove();
+                switch (true) {
+                    case event.repetition === null:
+                        this.calendar.getEventById(event.id)?.remove();
+                        break;
+                    case event.confirmOption === 'this':
+                        this.calendar.getEventById(event.id + '|' + event.repetition)?.remove();
+                        break;
+                    case event.confirmOption === 'future':
+                    case event.confirmOption === 'all':
+                        this.calendar.getEvents().filter(e => {
+                            const split = e.id.split('|');
+                            if (event.confirmOption === 'future') {
+                                return split[0] === String(event.id) && split[1] >= event.repetition;
+                            } else {
+                                return split[0] === String(event.id);
+                            }
+                        }).forEach(e => e.remove());
+                        break;
+                }
+
+                // check if this.close exists
+                if (typeof this.close === 'function') {
+                    this.close();
+                }
             });
         },
         calendar: null,
@@ -132,6 +180,7 @@ const calendar = () => {
                 if (this.calendarId === null) {
                     this.calendarId = calendar.id;
                 }
+
                calendar.events = (info) => this.$wire.getEvents(info, calendar);
                this.activeCalendars.push(calendar.id);
             });

@@ -15,11 +15,11 @@
 }
 
 .fc-day {
-    @apply bg-white text-gray-800;
+    @apply bg-white text-gray-800 dark:bg-secondary-800;
 }
 
 .fc-day.fc-day-other {
-    @apply bg-gray-50 text-gray-500;
+    @apply bg-gray-50 text-gray-500 dark:bg-secondary-700;
 }
 
 .fc-daygrid-day-top {
@@ -40,4 +40,24 @@
 
 .fc-col-header-cell .fc-scrollgrid-sync-inner {
     @apply py-2 font-semibold;
+}
+
+.fc-col-header-cell-cushion {
+    @apply dark:text-white
+}
+
+.fc-event-time {
+    @apply dark:text-white
+}
+
+.fc-event-title {
+    @apply dark:text-white
+}
+
+.fc-daygrid-day-number {
+    @apply dark:text-white
+}
+
+.fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+    @apply border dark:border-slate-600;
 }

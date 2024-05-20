@@ -13,6 +13,9 @@
                 />
             </div>
             <div class="sm:col-span-6">
+                <x-checkbox x-model="calendarItem.hasRepeatableEvents" :label="__('Has repeatable events')"/>
+            </div>
+            <div class="sm:col-span-6">
                 <x-checkbox x-model="calendarItem.isPublic" :label="__('Public')"/>
             </div>
         </div>
