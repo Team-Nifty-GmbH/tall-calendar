@@ -10,9 +10,9 @@
                 <input
                     x-bind:value="calendarLoopItem.id"
                     x-bind:style="'background-color: ' + calendarLoopItem.color"
-                    x-model="activeCalendars"
                     x-on:change="toggleEventSource(calendarLoopItem)"
                     type="checkbox"
+                    checked
                     class="form-checkbox border-secondary-300 text-primary-600 focus:ring-primary-600
                             focus:border-primary-400 dark:border-secondary-500 dark:checked:border-secondary-600
                             dark:focus:ring-secondary-600 dark:focus:border-secondary-500 dark:bg-secondary-600
