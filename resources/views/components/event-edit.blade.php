@@ -1,5 +1,17 @@
 <div class="grid grid-cols-1 gap-1.5" x-data="{errors: $wire.entangle('validationErrors')}">
     @section('event-edit.content')
+        <x-select
+            wire:model="calendarEvent.calendar_id"
+            :label="__('Calendar')"
+            option-value="id"
+            option-label="name"
+            :clearable="false"
+            x-on:selected="$wire.calendarEvent.is_repeatable = $wire.isCalendarEventRepeatable($event.detail.value);"
+        >
+            @foreach($this->selectableCalendars as $calendar)
+                <x-select.option :value="$calendar['id']" :label="$calendar['name']"></x-select.option>
+            @endforeach
+        </x-select>
         <x-input x-ref="autofocus" :label="__('Title') . '*'" wire:model="calendarEvent.title" x-bind:readonly="! $wire.calendarEvent.is_editable ?? false"/>
         <x-textarea :label="__('Description')" wire:model="calendarEvent.description" x-bind:readonly="! $wire.calendarEvent.is_editable ?? false"/>
         <x-checkbox :label="__('all-day')" wire:model="calendarEvent.allDay" x-bind:disabled="! $wire.calendarEvent.is_editable ?? false"/>
