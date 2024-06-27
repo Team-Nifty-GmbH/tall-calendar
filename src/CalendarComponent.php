@@ -529,14 +529,10 @@ class CalendarComponent extends Component
     }
 
     #[Renderless]
-    public function onEventDragStart(array $eventInfo): void
-    {
-    }
+    public function onEventDragStart(array $eventInfo): void {}
 
     #[Renderless]
-    public function onEventDragStop(array $eventInfo): void
-    {
-    }
+    public function onEventDragStop(array $eventInfo): void {}
 
     #[Renderless]
     public function onEventDrop(array $eventInfo): void
