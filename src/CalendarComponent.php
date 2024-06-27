@@ -27,6 +27,9 @@ class CalendarComponent extends Component
 
     public bool $showInvites = true;
 
+    #[Locked]
+    public array $selectableCalendars = [];
+
     public array $calendarEvent = [];
 
     #[Locked]
@@ -53,7 +56,11 @@ class CalendarComponent extends Component
 
     public function mount(): void
     {
-        $this->calendarEvent = ['start' => now(), 'end' => now()];
+        $this->calendarEvent = [
+            'calendar_id' => null,
+            'start' => now(),
+            'end' => now(),
+        ];
     }
 
     public function getRules(): array
@@ -163,11 +170,17 @@ class CalendarComponent extends Component
 
     public function getCalendars(): array
     {
-        return array_merge(
+        $calendars = array_merge(
             $this->getMyCalendars()->toArray(),
             $this->getSharedWithMeCalendars()->toArray(),
             $this->getPublicCalendars()->toArray(),
         );
+
+        $this->selectableCalendars = collect($calendars)
+            ->where('resourceEditable', true)
+            ->all();
+
+        return $calendars;
     }
 
     public function getMyCalendars(): Collection
@@ -280,6 +293,10 @@ class CalendarComponent extends Component
             ->whereKey($attributes['id'] ?? null)
             ->firstOrFail();
 
+        $this->selectableCalendars = collect($this->selectableCalendars)
+            ->reject(fn ($item) => $item['id'] === $calendar->id)
+            ->all();
+
         return $calendar->delete();
     }
 
@@ -289,7 +306,6 @@ class CalendarComponent extends Component
             ->firstOrNew($attributes['id'] ?? null);
 
         $calendar->fromCalendarObject($attributes);
-
         $calendar->save();
 
         if (method_exists(auth()->user(), 'calendars')) {
@@ -298,7 +314,16 @@ class CalendarComponent extends Component
                 ->syncWithoutDetaching($calendar);
         }
 
-        return $calendar->toCalendarObject(['group' => 'my']);
+        $calendarObject = $calendar->toCalendarObject(['group' => 'my']);
+        $index = collect($this->selectableCalendars)->search(fn ($item) => $item['id'] === $calendar->id);
+
+        if ($index === false) {
+            $this->selectableCalendars[] = $calendarObject;
+        } else {
+            $this->selectableCalendars[$index] = $calendarObject;
+        }
+
+        return $calendarObject;
     }
 
     #[Renderless]
@@ -458,6 +483,13 @@ class CalendarComponent extends Component
         $this->skipRender();
     }
 
+    public function isCalendarEventRepeatable(int|string $calendarId): bool
+    {
+        return (bool) config('tall-calendar.models.calendar')::query()
+            ->whereKey($calendarId)
+            ->value('has_repeatable_events');
+    }
+
     #[Renderless]
     public function showModal(): void
     {
@@ -481,18 +513,20 @@ class CalendarComponent extends Component
     #[Renderless]
     public function onDateClick(array $eventInfo): void
     {
-        $calendar = collect($this->getCalendars())->where('resourceEditable', true)->first();
-        $this->onEventClick([
-            'event' => [
-                'start' => Carbon::parse($eventInfo['dateStr'])->setHour(9)->toDateTimeString(),
-                'end' => Carbon::parse($eventInfo['dateStr'])->setHour(10)->toDateTimeString(),
-                'allDay' => false,
-                'calendar_id' => $calendar['id'] ?? null,
-                'is_editable' => $calendar['resourceEditable'] ?? false,
-                'is_repeatable' => $calendar['hasRepeatableEvents'] ?? false,
-                'invited' => [],
-            ],
-        ]);
+        if ($this->selectableCalendars) {
+            $calendar = reset($this->selectableCalendars);
+            $this->onEventClick([
+                'event' => [
+                    'start' => Carbon::parse($eventInfo['dateStr'])->setHour(9)->toDateTimeString(),
+                    'end' => Carbon::parse($eventInfo['dateStr'])->setHour(10)->toDateTimeString(),
+                    'allDay' => false,
+                    'calendar_id' => $calendar['id'] ?? null,
+                    'is_editable' => $calendar['resourceEditable'] ?? false,
+                    'is_repeatable' => $calendar['hasRepeatableEvents'] ?? false,
+                    'invited' => [],
+                ],
+            ]);
+        }
     }
 
     #[Renderless]

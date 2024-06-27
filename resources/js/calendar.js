@@ -31,9 +31,9 @@ const calendar = () => {
 
             const existingEvent = this.calendar.getEventById(calendarEvent.calendar_event.id);
 
-            if ((status === 'accepted' || status === 'maybe') && ! existingEvent) {
+            if ((status === 'accepted' || status === 'maybe') && !existingEvent) {
                 this.calendar.addEvent(calendarEvent.calendar_event, this.calendar.getEventSourceById(this.calendarId));
-            } else if(status === 'declined' && existingEvent) {
+            } else if (status === 'declined' && existingEvent) {
                 existingEvent.remove();
             }
 
@@ -61,7 +61,6 @@ const calendar = () => {
                 let index = this.calendars.findIndex(c => c.id === calendar.id);
                 this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
                 this.calendarId = calendar.id;
-                this.activeCalendars.push(calendar.id);
 
                 // check if this.close exists
                 if (typeof this.close === 'function') {
@@ -169,7 +168,6 @@ const calendar = () => {
         calendarId: null,
         calendars: [],
         invites: [],
-        activeCalendars: [],
         calendarEvent: {},
         dispatchCalendarEvents(eventName, params) {
             const eventNameKebap = eventName.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
@@ -181,8 +179,7 @@ const calendar = () => {
                     this.calendarId = calendar.id;
                 }
 
-               calendar.events = (info) => this.$wire.getEvents(info, calendar);
-               this.activeCalendars.push(calendar.id);
+                calendar.events = (info) => this.$wire.getEvents(info, calendar);
             });
 
             return this.calendars;
