@@ -7,7 +7,7 @@
         "php": "^8.2",
         "laravel/framework": "^11.0",
         "livewire/livewire": "^3.0",
-        "wireui/wireui": "^1.17"
+        "wireui/wireui": "^2.0"
     },
     "require-dev": {
         "laravel/pint": "^1.0",

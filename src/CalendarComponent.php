@@ -17,7 +17,7 @@ use Livewire\Attributes\Renderless;
 use Livewire\Component;
 use TeamNiftyGmbH\Calendar\Models\Calendar;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Inviteable;
-use WireUi\Traits\Actions;
+use WireUi\Traits\WireUiActions as Actions;
 
 class CalendarComponent extends Component
 {
