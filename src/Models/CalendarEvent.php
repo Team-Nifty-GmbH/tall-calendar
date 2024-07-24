@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
@@ -53,7 +54,10 @@ class CalendarEvent extends Model
 
         $invitedModels = collect();
         foreach ($types as $type) {
-            $invitedModels = $invitedModels->merge($this->morphedByMany($type, 'inviteable')->withPivot('status')->get());
+            $invitedModels = $invitedModels->merge(
+                $this->morphedByMany(
+                    Relation::getMorphedModel($type), 'inviteable')->withPivot('status')->get()
+            );
         }
 
         return $invitedModels;

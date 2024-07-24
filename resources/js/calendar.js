@@ -44,6 +44,12 @@ const calendar = () => {
             this.calendarItem = calendar;
         },
         editCalendar(calendar) {
+            // if calendar has no id, it's a new calendar
+            // add a key with color and a random hex color
+            if (! calendar.id) {
+                calendar.color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            }
+
             this.calendarItem = calendar;
             this.calendarItemProxy = {
                 ...calendar
