@@ -136,7 +136,8 @@ class CalendarComponent extends Component
                 $invited = $this->getInvited($event);
 
                 return $event->toCalendarEventObject([
-                    'is_editable' => $calendarAttributes['permission'] !== 'reader', 'invited' => $invited,
+                    'is_editable' => $calendarAttributes['permission'] !== 'reader',
+                    'invited' => $invited,
                     'is_repeatable' => $calendar->has_repeatable_events ?? false,
                     'has_repeats' => ! is_null($event->repeat),
                 ]);

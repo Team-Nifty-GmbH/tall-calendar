@@ -68,6 +68,15 @@ const calendar = () => {
                 this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
                 this.calendarId = calendar.id;
 
+                this.calendarItemProxy = {
+                    ...calendar
+                };
+
+                calendar.permission = calendar.is_editable ? 'owner': 'reader';
+                this.calendar.getEventSourceById(this.calendarItem.id).remove();
+                calendar.events = (info) => this.$wire.getEvents(info, calendar);
+                this.calendar.addEventSource(calendar);
+
                 // check if this.close exists
                 if (typeof this.close === 'function') {
                     this.close();
