@@ -1,4 +1,8 @@
 module.exports = {
-    content: ['./js/**/*.js', './resources/views/**/*.blade.php', './src/**/*.php'],
+    content: [
+        __dirname + '/js/**/*.js',
+        __dirname + '/resources/views/**/*.blade.php',
+        __dirname + '/src/**/*.php'
+    ],
     darkMode: 'class',
 }
