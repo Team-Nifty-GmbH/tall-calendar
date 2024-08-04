@@ -15,7 +15,7 @@ class CalendarEventTableSeeder extends Seeder
      */
     public function run()
     {
-        foreach (Calendar::all() as $calendar) {
+        foreach (Calendar::all(['id']) as $calendar) {
             $calendar->calendarEvents()->saveMany(CalendarEvent::factory()->count(10)->make());
         }
     }
