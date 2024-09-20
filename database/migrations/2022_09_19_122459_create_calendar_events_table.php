@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('repeat')->nullable();
-            $table->boolean('is_all_day')->default(false);
             $table->json('extended_props')->nullable();
+            $table->boolean('is_all_day')->default(false);
             $table->timestamps();
         });
     }
