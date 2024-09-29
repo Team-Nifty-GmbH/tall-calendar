@@ -3,10 +3,13 @@
 namespace TeamNiftyGmbH\Calendar\Models;
 
 use Illuminate\Database\Eloquent\BroadcastsEvents;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Calendarable;
+use TeamNiftyGmbH\Calendar\Support\CalendarCollection;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
 
 class Calendar extends Model
@@ -18,24 +21,33 @@ class Calendar extends Model
     ];
 
     protected $casts = [
+        'custom_properties' => 'array',
         'has_notifications' => 'boolean',
         'has_repeatable_events' => 'boolean',
         'is_editable' => 'boolean',
         'is_public' => 'boolean',
     ];
 
-    public static function boot(): void
+    protected static function booted(): void
     {
-        parent::boot();
-
         static::deleting(function ($calendar) {
             $calendar->calendarEvents()->delete();
         });
     }
 
+    public function calendarables(): HasMany
+    {
+        return $this->hasMany(Calendarable::class);
+    }
+
     public function calendarEvents(): HasMany
     {
         return $this->hasMany(config('tall-calendar.models.calendar_event'));
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(static::class, 'parent_id');
     }
 
     public function invitesCalendarEvents()
@@ -49,9 +61,14 @@ class Calendar extends Model
             'calendar_event_id');
     }
 
-    public function calendarables(): HasMany
+    public function parent(): BelongsTo
     {
-        return $this->hasMany(Calendarable::class);
+        return $this->belongsTo(static::class, 'parent_id');
+    }
+
+    public function newCollection(array $models = []): Collection
+    {
+        return app(CalendarCollection::class, ['items' => $models]);
     }
 
     public function toCalendarObject(array $attributes = []): array
@@ -59,12 +76,18 @@ class Calendar extends Model
         return array_merge(
             [
                 'id' => $this->id,
+                'parentId' => $this->parent_id,
+                'modelType' => $this->model_type,
                 'name' => $this->name,
                 'color' => $this->color,
-                'resourceEditable' => $this->is_editable,
+                'customProperties' => $this->custom_properties ?? [],
+                'resourceEditable' => $this->is_editable ?? true,
                 'hasRepeatableEvents' => $this->has_repeatable_events ?? true,
-                'isPublic' => $this->is_public,
+                'isPublic' => $this->is_public ?? false,
                 'isShared' => $this->calendarables_count > 1,
+                'children' => $this->id ? static::query()
+                    ->where('parent_id', $this->id)
+                    ->count('id') : 0,
             ],
             $attributes
         );

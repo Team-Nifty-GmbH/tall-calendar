@@ -1,6 +1,6 @@
 <?php
 
-namespace TeamNiftyGmbH\Calendar;
+namespace TeamNiftyGmbH\Calendar\Livewire;
 
 use Carbon\Carbon;
 use DateInterval;
@@ -23,9 +23,8 @@ class CalendarComponent extends Component
 {
     use Actions;
 
-    public bool $showCalendars = true;
-
-    public bool $showInvites = true;
+    #[Locked]
+    public array $allCalendars = [];
 
     #[Locked]
     public array $selectableCalendars = [];
@@ -95,7 +94,7 @@ class CalendarComponent extends Component
 
     public function render(): Factory|Application|View
     {
-        return view('tall-calendar::livewire.calendar');
+        return view('tall-calendar::livewire.calendar.calendar');
     }
 
     public function getEvents(array $info, array $calendarAttributes): array
@@ -105,7 +104,7 @@ class CalendarComponent extends Component
             'end' => Carbon::parse($info['endStr'])->toDateTimeString(),
         ];
 
-        $calendar = config('tall-calendar.models.calendar')::query()->find($calendarAttributes['id']);
+        $calendar = app(config('tall-calendar.models.calendar'))->query()->find($calendarAttributes['id']);
 
         $calendarEvents = $calendar->calendarEvents()
             ->whereNull('repeat')
@@ -171,17 +170,17 @@ class CalendarComponent extends Component
 
     public function getCalendars(): array
     {
-        $calendars = array_merge(
+        $this->allCalendars = array_merge(
             $this->getMyCalendars()->toArray(),
             $this->getSharedWithMeCalendars()->toArray(),
             $this->getPublicCalendars()->toArray(),
         );
 
-        $this->selectableCalendars = collect($calendars)
+        $this->selectableCalendars = collect($this->allCalendars)
             ->where('resourceEditable', true)
             ->all();
 
-        return $calendars;
+        return $this->allCalendars;
     }
 
     public function getMyCalendars(): Collection
@@ -192,6 +191,7 @@ class CalendarComponent extends Component
             ->wherePivot('permission', 'owner')
             ->withCount('calendarables')
             ->get()
+            ->toFlatTree()
             ->map(function (Calendar $calendar) {
                 return $calendar->toCalendarObject(
                     [
@@ -209,6 +209,7 @@ class CalendarComponent extends Component
             ->withPivot('permission')
             ->wherePivot('permission', '!=', 'owner')
             ->get()
+            ->toFlatTree()
             ->map(function (Calendar $calendar) {
                 return $calendar->toCalendarObject(
                     [
@@ -226,6 +227,7 @@ class CalendarComponent extends Component
             ->whereNotIn('id', $this->myCalendars->pluck('id'))
             ->whereNotIn('id', $this->sharedWithMe->pluck('id'))
             ->get()
+            ->toFlatTree()
             ->map(function (Calendar $calendar) {
                 return $calendar->toCalendarObject([
                     'permission' => 'reader',
@@ -286,45 +288,6 @@ class CalendarComponent extends Component
                 'eventsSet',
             ]
         );
-    }
-
-    public function deleteCalendar(array $attributes): bool
-    {
-        $calendar = config('tall-calendar.models.calendar')::query()
-            ->whereKey($attributes['id'] ?? null)
-            ->firstOrFail();
-
-        $this->selectableCalendars = collect($this->selectableCalendars)
-            ->reject(fn ($item) => $item['id'] === $calendar->id)
-            ->all();
-
-        return $calendar->delete();
-    }
-
-    public function saveCalendar(array $attributes): array|false
-    {
-        $calendar = config('tall-calendar.models.calendar')::query()
-            ->firstOrNew($attributes['id'] ?? null);
-
-        $calendar->fromCalendarObject($attributes);
-        $calendar->save();
-
-        if (method_exists(auth()->user(), 'calendars')) {
-            auth()->user()
-                ->calendars()
-                ->syncWithoutDetaching($calendar);
-        }
-
-        $calendarObject = $calendar->toCalendarObject(['group' => 'my']);
-        $index = collect($this->selectableCalendars)->search(fn ($item) => $item['id'] === $calendar->id);
-
-        if ($index === false) {
-            $this->selectableCalendars[] = $calendarObject;
-        } else {
-            $this->selectableCalendars[$index] = $calendarObject;
-        }
-
-        return $calendarObject;
     }
 
     #[Renderless]
@@ -492,6 +455,26 @@ class CalendarComponent extends Component
     }
 
     #[Renderless]
+    public function updateSelectableCalendars(array $calendar): void
+    {
+        $index = collect($this->selectableCalendars)->search(fn ($item) => $item['id'] === data_get($calendar, 'id'));
+
+        if ($index === false) {
+            $this->selectableCalendars[] = $calendar;
+        } else {
+            $this->selectableCalendars[$index] = $calendar;
+        }
+    }
+
+    #[Renderless]
+    public function removeSelectableCalendar(array $calendar): void
+    {
+        $this->selectableCalendars = collect($this->selectableCalendars)
+            ->reject(fn ($item) => $item['id'] === data_get($calendar, 'id'))
+            ->all();
+    }
+
+    #[Renderless]
     public function showModal(): void
     {
         $this->js(
@@ -502,20 +485,13 @@ class CalendarComponent extends Component
     }
 
     #[Renderless]
-    public function editCalendar(?array $calendar = null): void
+    public function onDateClick(array $eventInfo, ?array $calendar = null): void
     {
-        $this->js(
-            <<<'JS'
-                $openModal('calendar-modal');
-            JS
-        );
-    }
-
-    #[Renderless]
-    public function onDateClick(array $eventInfo): void
-    {
-        if ($this->selectableCalendars) {
+        if (! $calendar && $this->selectableCalendars) {
             $calendar = reset($this->selectableCalendars);
+        }
+
+        if (data_get($calendar, 'resourceEditable', false)) {
             $this->onEventClick([
                 'event' => [
                     'start' => Carbon::parse($eventInfo['dateStr'])->setHour(9)->toDateTimeString(),

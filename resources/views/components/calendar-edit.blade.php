@@ -1,23 +1,25 @@
 <div class="space-y-8 divide-y divide-gray-200">
     <div class="space-y-8 divide-y divide-gray-200">
-        <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-            <div class="sm:col-span-6">
-                <x-input x-model="calendarItem.name" :label="__('Calendar Name')"/>
-            </div>
-            <div class="sm:col-span-6">
-                <x-input
-                    class="p-0"
-                    type="color"
-                    :label="__('Color')"
-                    x-model="calendarItem.color"
+        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-1">
+            <div x-cloak x-show="$wire.selectedCalendar.children == 0">
+                <x-select
+                    wire:model="selectedCalendar.parentId"
+                    :label="__('Parent Calendar')"
+                    :options="$this->parentCalendars"
+                    option-label="name"
+                    option-value="id"
+                    option-description="description"
                 />
             </div>
-            <div class="sm:col-span-6">
-                <x-checkbox x-model="calendarItem.hasRepeatableEvents" :label="__('Has repeatable events')"/>
-            </div>
-            <div class="sm:col-span-6">
-                <x-checkbox x-model="calendarItem.isPublic" :label="__('Public')"/>
-            </div>
+            <x-input wire:model="selectedCalendar.name" :label="__('Calendar Name')"/>
+            <x-input
+                class="p-0"
+                type="color"
+                :label="__('Color')"
+                wire:model="selectedCalendar.color"
+            />
+            <x-checkbox wire:model="selectedCalendar.hasRepeatableEvents" :label="__('Has repeatable events')"/>
+            <x-checkbox wire:model="selectedCalendar.isPublic" :label="__('Public')"/>
         </div>
     </div>
 </div>

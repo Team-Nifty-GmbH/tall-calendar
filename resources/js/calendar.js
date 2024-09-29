@@ -1,7 +1,6 @@
 const calendar = () => {
     return {
         calendarItem: {},
-        calendarItemProxy: {},
         parseDateTime(event, locale, property) {
             const dateTime = new Date(event.start);
             let config = null;
@@ -43,21 +42,8 @@ const calendar = () => {
             this.calendarId = calendar.id;
             this.calendarItem = calendar;
         },
-        editCalendar(calendar) {
-            // if calendar has no id, it's a new calendar
-            // add a key with color and a random hex color
-            if (! calendar.id) {
-                calendar.color = '#' + Math.floor(Math.random() * 16777215).toString(16);
-            }
-
-            this.calendarItem = calendar;
-            this.calendarItemProxy = {
-                ...calendar
-            };
-            this.$wire.editCalendar(calendar);
-        },
         saveCalendar() {
-            this.$wire.saveCalendar(this.calendarItem).then(calendar => {
+            this.$wire.saveCalendar().then(calendar => {
                 if (calendar === false) {
                     return false;
                 }
@@ -68,14 +54,12 @@ const calendar = () => {
                 this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
                 this.calendarId = calendar.id;
 
-                this.calendarItemProxy = {
-                    ...calendar
-                };
-
                 calendar.permission = calendar.is_editable ? 'owner': 'reader';
-                this.calendar.getEventSourceById(this.calendarItem.id).remove();
-                calendar.events = (info) => this.$wire.getEvents(info, calendar);
+                this.calendar.getEventSourceById(this.calendarItem.id)?.remove();
+                calendar.events = (info) => this.$wire.$parent.getEvents(info, calendar);
                 this.calendar.addEventSource(calendar);
+
+                this.$wire.$parent.updateSelectableCalendars(calendar);
 
                 // check if this.close exists
                 if (typeof this.close === 'function') {
@@ -91,14 +75,8 @@ const calendar = () => {
 
                 this.calendar.getEventSourceById(this.calendarItem.id).remove();
                 this.calendars.splice(this.calendars.findIndex(c => c.id === this.calendarItem.id), 1);
+                this.$wire.$parent.removeSelectableCalendar(this.calendarItem);
             });
-        },
-        resetCalendarItem() {
-            let index = this.calendars.findIndex(c => c.id === this.calendarItemProxy.id);
-
-            if (index !== -1) {
-                this.calendars.splice(index, 1, this.calendarItemProxy);
-            }
         },
         saveEvent() {
             this.$wire.saveEvent(this.$wire.calendarEvent).then(event => {
@@ -239,7 +217,7 @@ const calendar = () => {
                     this.dispatchCalendarEvents('unselect', {jsEvent, view});
                 },
                 dateClick: dateClickInfo => {
-                    this.$wire.onDateClick(dateClickInfo);
+                    this.$wire.onDateClick(dateClickInfo, this.calendarItem);
                     this.dispatchCalendarEvents('dateClick', dateClickInfo);
                 },
                 eventDidMount: eventDidMountInfo => {
