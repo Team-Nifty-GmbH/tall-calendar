@@ -57,6 +57,7 @@ class CalendarComponent extends Component
     {
         $this->calendarEvent = [
             'calendar_id' => null,
+            'model_id' => null,
             'start' => now(),
             'end' => now(),
         ];
@@ -178,6 +179,16 @@ class CalendarComponent extends Component
 
         $this->selectableCalendars = collect($this->allCalendars)
             ->where('resourceEditable', true)
+            ->map(function ($calendar) {
+                if ($parentId = data_get($calendar, 'parentId')) {
+                    $calendar['name'] = app(config('tall-calendar.models.calendar'))
+                        ->query()
+                        ->whereKey($parentId)
+                        ->value('name') . ' -> ' . $calendar['name'] ?? '';
+                }
+
+                return $calendar;
+            })
             ->all();
 
         return $this->allCalendars;
@@ -458,6 +469,12 @@ class CalendarComponent extends Component
     public function updateSelectableCalendars(array $calendar): void
     {
         $index = collect($this->selectableCalendars)->search(fn ($item) => $item['id'] === data_get($calendar, 'id'));
+        if ($parentId = data_get($calendar, 'parentId')) {
+            $calendar['name'] = app(config('tall-calendar.models.calendar'))
+                ->query()
+                ->whereKey($parentId)
+                ->value('name') . ' -> ' . $calendar['name'] ?? '';
+        }
 
         if ($index === false) {
             $this->selectableCalendars[] = $calendar;
@@ -498,6 +515,8 @@ class CalendarComponent extends Component
                     'end' => Carbon::parse($eventInfo['dateStr'])->setHour(10)->toDateTimeString(),
                     'allDay' => false,
                     'calendar_id' => $calendar['id'] ?? null,
+                    'model_type' => $calendar['modelType'] ?? null,
+                    'model_id' => null,
                     'is_editable' => $calendar['resourceEditable'] ?? false,
                     'is_repeatable' => $calendar['hasRepeatableEvents'] ?? false,
                     'invited' => [],

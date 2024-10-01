@@ -20,19 +20,22 @@ class Calendar extends Model
         'id',
     ];
 
-    protected $casts = [
-        'custom_properties' => 'array',
-        'has_notifications' => 'boolean',
-        'has_repeatable_events' => 'boolean',
-        'is_editable' => 'boolean',
-        'is_public' => 'boolean',
-    ];
-
     protected static function booted(): void
     {
         static::deleting(function ($calendar) {
             $calendar->calendarEvents()->delete();
         });
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'custom_properties' => 'array',
+            'has_notifications' => 'boolean',
+            'has_repeatable_events' => 'boolean',
+            'is_editable' => 'boolean',
+            'is_public' => 'boolean',
+        ];
     }
 
     public function calendarables(): HasMany

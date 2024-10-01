@@ -42,7 +42,10 @@ class CalendarOverview extends Component
         $this->parentCalendars = config('tall-calendar.models.calendar')::query()
             ->whereKeyNot(data_get($calendar, 'id'))
             ->whereNull('parent_id')
-            ->where('model_type', data_get($calendar, 'model_type'))
+            ->when(
+                data_get($calendar, 'id'),
+                fn ($query) => $query->where('model_type', data_get($calendar, 'model_type'))
+            )
             ->get(['id', 'name', 'description'])
             ->toArray();
 
