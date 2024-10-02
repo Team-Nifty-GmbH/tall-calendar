@@ -1,91 +1,16 @@
-<div tall-calendar x-data="{
-        ...tallCalendar(),
-        @section('calendar-data')
-        @show
-    }"
-     x-on:edit-calendar="editCalendar($event.detail)"
->
+<x-card padding="none" class="lg:flex whitespace-nowrap">
     <div>
-        @section('calendar-event-modal')
-            <x-modal name="calendar-event-modal">
-                <x-card :title="__('Edit Event')">
-                    <x-tall-calendar::event-edit />
-                    <x-slot name="footer">
-                        <div class="flex justify-between gap-x-4">
-                            <div>
-                                <x-button
-                                    x-show="calendarEvent.id"
-                                    spinner
-                                    flat
-                                    negative
-                                    :label="__('Delete')"
-                                    x-show="$wire.calendarEvent.is_editable && $wire.calendarEvent.id"
-                                    x-on:click="$wireui.confirmDialog({
-                                        id: 'delete-event-dialog',
-                                        icon: 'question',
-                                        accept: {
-                                            label: '{{ __('OK') }}',
-                                            execute: () => deleteEvent()
-                                        },
-                                        reject: {
-                                            label: '{{ __('Cancel') }}',
-                                        }
-                                    })"
-                                />
-                            </div>
-                            <div class="flex">
-                                <x-button flat :label="__('Cancel')" x-on:click="close" />
-                                <x-button
-                                    primary
-                                    :label="__('Save')"
-                                    x-on:click="
-                                    $wire.confirmSave = $wire.calendarEventWasRepeatable && !$wire.calendarEvent.has_repeats ? 'this' : 'future';
-                                    $wire.calendarEventWasRepeatable ?
-                                        $wireui.confirmDialog({
-                                            id: 'edit-repeatable-event-dialog',
-                                            icon: 'question',
-                                            accept: {
-                                                label: '{{ __('OK') }}',
-                                                execute: () => saveEvent()
-                                            },
-                                            reject: {
-                                                label: '{{ __('Cancel') }}',
-                                            }
-                                        }) :
-                                        saveEvent();
-                                    "
-                                />
-                            </div>
-                        </div>
-                    </x-slot>
-                </x-card>
-            </x-modal>
-            <x-dialog id="edit-repeatable-event-dialog" :title="__('Edit Repeatable Event')">
-                <div x-show="! $wire.calendarEvent.has_repeats">
-                    <x-radio :label="__('This event')" value="this" wire:model="confirmSave"/>
-                </div>
-                <x-radio :label="__('This event and following')" value="future" wire:model="confirmSave"/>
-                <x-radio :label="__('All events')" value="all" wire:model="confirmSave"/>
-            </x-dialog>
-            <x-dialog id="delete-event-dialog" :title="__('Confirm Delete Event')">
-                <div x-show="$wire.calendarEventWasRepeatable">
-                    <x-radio :label="__('This event')" value="this" wire:model="confirmDelete"/>
-                    <x-radio :label="__('This event and following')" value="future" wire:model="confirmDelete"/>
-                    <x-radio :label="__('All events')" value="all" wire:model="confirmDelete"/>
-                </div>
-            </x-dialog>
-        @show
-    </div>
-    <x-card padding="none" class="lg:flex whitespace-nowrap">
-        <div>
-            @if($showCalendars)
-                <x-modal name="calendar-modal" x-on:close="resetCalendarItem();">
+        @if($showCalendars)
+            @section('calendar-modal')
+                <x-modal name="calendar-modal">
                     <x-card :title="__('Edit Calendar')">
-                        <x-tall-calendar::calendar-edit />
+                        @section('calendar-edit')
+                            <x-tall-calendar::calendar-edit />
+                        @show
                         <x-slot name="footer">
                             <div class="flex justify-between gap-x-4">
                                 <div>
-                                    <x-button x-show="calendarItem.id" flat negative :label="__('Delete')" x-on:click="deleteCalendar()" />
+                                    <x-button x-show="$wire.selectedCalendar.id" flat negative :label="__('Delete')" x-on:click="deleteCalendar()" />
                                 </div>
                                 <div class="flex">
                                     <x-button flat :label="__('Cancel')" x-on:click="close();" />
@@ -95,7 +20,8 @@
                         </x-slot>
                     </x-card>
                 </x-modal>
-                @section('calendar-list')
+            @show
+            @section('calendar-overview')
                 <div class="p-1.5 space-y-4">
                     <div x-data="{show: true}">
                         <div class="flex justify-between items-center group">
@@ -109,7 +35,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                             </svg>
                         </div>
-                        <div x-cloak x-show="show">
+                        <div x-cloak x-show="show" class="max-h-64 overflow-auto">
                             <x-tall-calendar::calendar-list group="my" />
                         </div>
                     </div>
@@ -120,7 +46,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                             </svg>
                         </div>
-                        <div x-cloak x-show="show">
+                        <div x-cloak x-show="show" class="max-h-52 overflow-auto">
                             <x-tall-calendar::calendar-list group="shared" />
                         </div>
                     </div>
@@ -131,14 +57,15 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                             </svg>
                         </div>
-                        <div x-cloak x-show="show">
+                        <div x-cloak x-show="show" class="max-h-52 overflow-auto">
                             <x-tall-calendar::calendar-list group="public" />
                         </div>
                     </div>
                 </div>
-                @show
-            @endif
-            @if($showInvites)
+            @show
+        @endif
+        @if($showInvites)
+            @section('invites')
                 <div x-data="{tab: {name: 'new', status: [null]}}" class="p-1.5 space-y-4">
                     <div class="flex justify-between pb-1.5 font-semibold dark:text-gray-50">
                         <div>{{ __('Invites') }}</div>
@@ -175,10 +102,10 @@
                         </div>
                     </div>
                 </div>
-            @endif
-        </div>
-        <div wire:ignore>
-            <div class="dark:text-gray-50 border-l dark:border-secondary-600" x-bind:id="id"></div>
-        </div>
-    </x-card>
-</div>
+            @show
+        @endif
+    </div>
+    <div wire:ignore>
+        <div class="dark:text-gray-50 border-l dark:border-secondary-600" x-bind:id="id"></div>
+    </div>
+</x-card>

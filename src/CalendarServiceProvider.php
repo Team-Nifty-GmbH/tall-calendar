@@ -4,12 +4,11 @@ namespace TeamNiftyGmbH\Calendar;
 
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use TeamNiftyGmbH\Calendar\Livewire\CalendarComponent;
+use TeamNiftyGmbH\Calendar\Livewire\CalendarOverview;
 
 class CalendarServiceProvider extends ServiceProvider
 {
-    /**
-     * Register the service provider.
-     */
     public function register(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
@@ -20,11 +19,9 @@ class CalendarServiceProvider extends ServiceProvider
         );
 
         Livewire::component('calendar-component', CalendarComponent::class);
+        Livewire::component('calendar-overview', CalendarOverview::class);
     }
 
-    /**
-     * Bootstrap the application services.
-     */
     public function boot(): void
     {
         $this->offerPublishing();
