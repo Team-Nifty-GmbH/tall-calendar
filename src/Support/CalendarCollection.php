@@ -10,7 +10,7 @@ class CalendarCollection extends Collection
     {
         $tree = [];
 
-        foreach (collect($this->items)->sortBy('name')->sortBy('parent_id') as $item) {
+        foreach (collect($this->items)->sortBy('parent_id') as $item) {
             $tree[$item->parent_id ?? $item->id][] = $item;
         }
 
