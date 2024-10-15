@@ -19,7 +19,7 @@ class CalendarOverview extends Component
 
     public function mount(): void
     {
-        $this->selectedCalendar = (new (config('tall-calendar.models.calendar'))())
+        $this->selectedCalendar = app(config('tall-calendar.models.calendar'))
             ->toCalendarObject();
     }
 
@@ -31,7 +31,7 @@ class CalendarOverview extends Component
     public function editCalendar(?array $calendar = null): void
     {
         if (is_null($calendar)) {
-            $calendar = (new (config('tall-calendar.models.calendar'))())
+            $calendar = app(config('tall-calendar.models.calendar'))
                 ->toCalendarObject();
 
             $calendar['color'] = '#' . dechex(rand(0x000000, 0xFFFFFF));
@@ -39,7 +39,8 @@ class CalendarOverview extends Component
 
         $this->selectedCalendar = $calendar;
 
-        $this->parentCalendars = app(config('tall-calendar.models.calendar'))->query()
+        $this->parentCalendars = app(config('tall-calendar.models.calendar'))
+            ->query()
             ->whereKeyNot(data_get($calendar, 'id'))
             ->whereNull('parent_id')
             ->when(
@@ -58,7 +59,8 @@ class CalendarOverview extends Component
 
     public function saveCalendar(): array|false
     {
-        $calendar = config('tall-calendar.models.calendar')::query()
+        $calendar = app(config('tall-calendar.models.calendar'))
+            ->query()
             ->whereKey(data_get($this->selectedCalendar, 'id'))
             ->firstOrNew();
 
@@ -76,7 +78,8 @@ class CalendarOverview extends Component
 
     public function deleteCalendar(array $attributes): bool
     {
-        $calendar = config('tall-calendar.models.calendar')::query()
+        $calendar = app(config('tall-calendar.models.calendar'))
+            ->query()
             ->whereKey($attributes['id'] ?? null)
             ->firstOrFail();
 
