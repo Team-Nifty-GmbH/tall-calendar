@@ -51,7 +51,36 @@ const calendar = () => {
                 calendar.group = calendar.group || 'my';
 
                 let index = this.calendars.findIndex(c => c.id === calendar.id);
-                this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
+
+                if (calendar.parentId
+                    || (index !== -1 && this.calendars[index].parentId !== calendar.parentId)
+                ) {
+                    let siblingIndex = this.calendars.findLastIndex(c => c.parentId === calendar.parentId);
+                    let parentIndex = -1;
+
+                    if (siblingIndex !== -1) {
+                        this.calendars.splice(siblingIndex + 1, 0, calendar);
+                    } else {
+                        parentIndex = this.calendars.findIndex(c => c.id === calendar.parentId);
+
+                        if (parentIndex !== -1) {
+                            this.calendars.splice(parentIndex + 1, 0, calendar);
+                        } else {
+                            parentIndex = this.calendars.length;
+                            this.calendars.push(calendar);
+                        }
+                    }
+
+                    if (index !== -1) {
+                        this.calendars.splice(
+                            siblingIndex > index || parentIndex > index ? index : index + 1,
+                            1
+                        );
+                    }
+                } else {
+                    this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
+                }
+
                 this.calendarId = calendar.id;
 
                 calendar.permission = calendar.is_editable ? 'owner': 'reader';
