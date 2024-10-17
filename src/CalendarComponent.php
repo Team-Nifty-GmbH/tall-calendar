@@ -2,7 +2,4 @@
 
 namespace TeamNiftyGmbH\Calendar;
 
-class CalendarComponent extends \TeamNiftyGmbH\Calendar\Livewire\CalendarComponent
-{
-
-}
+class CalendarComponent extends \TeamNiftyGmbH\Calendar\Livewire\CalendarComponent {}
