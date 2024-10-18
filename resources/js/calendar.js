@@ -99,12 +99,12 @@ const calendar = () => {
         deleteCalendar() {
             this.$wire.deleteCalendar(this.calendarItem).then(success => {
                 if (success) {
+                    this.calendar.getEventSourceById(this.calendarItem.id).remove();
+                    this.calendars.splice(this.calendars.findIndex(c => c.id === this.calendarItem.id), 1);
+                    this.$wire.$parent.removeSelectableCalendar(this.calendarItem);
+
                     this.close();
                 }
-
-                this.calendar.getEventSourceById(this.calendarItem.id).remove();
-                this.calendars.splice(this.calendars.findIndex(c => c.id === this.calendarItem.id), 1);
-                this.$wire.$parent.removeSelectableCalendar(this.calendarItem);
             });
         },
         saveEvent() {
