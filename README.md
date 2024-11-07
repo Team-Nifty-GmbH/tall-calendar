@@ -16,7 +16,7 @@ i recommend adding it in the same file you import alpine.
 @import './vendor/team-nifty-gmbh/tall-calendar/resources/css/calendar.css';
 ```
 
-add the following to your `tailwind.config.js` file
+add the following to your `tailwind.config.mjs` file
 
 ```js
     content: [
