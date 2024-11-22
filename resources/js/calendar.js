@@ -304,6 +304,43 @@ const calendar = () => {
                 eventsSet: eventsSetInfo => {
                     this.dispatchCalendarEvents('eventsSet', eventsSetInfo);
                 },
+                eventContent(info) {
+                    let eventContent = document.createElement('div');
+                    eventContent.className = 'flex gap-1 justify-between px-1 w-full';
+
+                    let textNode = document.createElement('div');
+                    textNode.className = 'flex gap-1 flex-wrap w-full items-center';
+                    if (! info.event.allDay) {
+                        let calendarBadge = document.createElement('div');
+                        calendarBadge.className = 'h-3 w-3 rounded-full text-xs';
+                        calendarBadge.style.backgroundColor = info.backgroundColor;
+
+                        textNode.appendChild(calendarBadge);
+                    }
+
+                    let titleContainer = document.createElement('span');
+                    titleContainer.className = 'truncate';
+                    titleContainer.innerHTML = info.event.title;
+                    textNode.appendChild(titleContainer);
+
+                    if (info.event.extendedProps.appendTitle) {
+                        let appendTitle = document.createElement('div');
+                        appendTitle.className = 'flex flex-wrap gap-1 px-1';
+                        appendTitle.innerHTML = info.event.extendedProps.appendTitle;
+                        textNode.appendChild(appendTitle);
+                    }
+
+                    eventContent.appendChild(textNode);
+
+                    if (! info.event.allDay && info.timeText) {
+                        let timeNode = document.createElement('div');
+                        timeNode.innerHTML = info.timeText;
+
+                        eventContent.appendChild(timeNode);
+                    }
+
+                    return { html: eventContent.outerHTML };
+                },
             };
 
             this.calendar = new Calendar(calendarEl, {...defaultConfig, ...this.config});
