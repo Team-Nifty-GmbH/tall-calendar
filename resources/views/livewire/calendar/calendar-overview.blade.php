@@ -105,7 +105,7 @@
             @show
         @endif
     </div>
-    <div wire:ignore>
+    <div wire:ignore class="w-full">
         <div class="dark:text-gray-50 border-l dark:border-secondary-600" x-bind:id="id"></div>
     </div>
 </x-card>

@@ -38,6 +38,12 @@ class CalendarComponent extends Component
     public bool $calendarEventWasRepeatable = false;
 
     #[Locked]
+    public bool $showCalendars = true;
+
+    #[Locked]
+    public bool $showInvites = true;
+
+    #[Locked]
     public array $calendarPeriod = [
         'start' => null,
         'end' => null,
@@ -268,6 +274,12 @@ class CalendarComponent extends Component
                 'center' => 'timeGridDay,timeGridWeek,dayGridMonth',
             ],
             'nowIndicator' => true,
+            'buttonText' => [
+                'today' => __('Today'),
+                'month' => __('Month'),
+                'week' => __('Week'),
+                'day' => __('Day'),
+            ],
         ];
     }
 
