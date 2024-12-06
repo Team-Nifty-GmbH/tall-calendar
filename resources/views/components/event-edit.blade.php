@@ -307,7 +307,7 @@
                                 [
                                     'id',
                                     '!=',
-                                    auth()->user()->id
+                                    auth()->user()?->id
                                 ]
                             ],
                         ]
