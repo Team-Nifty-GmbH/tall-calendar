@@ -17,11 +17,11 @@ use Livewire\Attributes\Renderless;
 use Livewire\Component;
 use TeamNiftyGmbH\Calendar\Models\Calendar;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Inviteable;
-use WireUi\Traits\Actions;
+use WireUi\Traits\WireUiActions;
 
 class CalendarComponent extends Component
 {
-    use Actions;
+    use WireUiActions;
 
     #[Locked]
     public array $allCalendars = [];
