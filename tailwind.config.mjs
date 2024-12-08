@@ -1,0 +1,8 @@
+export default {
+    content: [
+        __dirname + '/js/**/*.js',
+        __dirname + '/resources/views/**/*.blade.php',
+        __dirname + '/src/**/*.php'
+    ],
+    darkMode: 'class',
+}

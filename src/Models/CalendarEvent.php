@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use TeamNiftyGmbH\Calendar\Traits\HasPackageFactory;
@@ -22,15 +23,18 @@ class CalendarEvent extends Model
         'id',
     ];
 
-    protected $casts = [
-        'start' => 'datetime',
-        'end' => 'datetime',
-        'repeat_start' => 'datetime',
-        'repeat_end' => 'datetime',
-        'excluded' => 'array',
-        'is_all_day' => 'boolean',
-        'extended_props' => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'start' => 'datetime',
+            'end' => 'datetime',
+            'repeat_start' => 'datetime',
+            'repeat_end' => 'datetime',
+            'excluded' => 'array',
+            'is_all_day' => 'boolean',
+            'extended_props' => 'array',
+        ];
+    }
 
     public function calendar(): BelongsTo
     {
@@ -53,7 +57,10 @@ class CalendarEvent extends Model
 
         $invitedModels = collect();
         foreach ($types as $type) {
-            $invitedModels = $invitedModels->merge($this->morphedByMany($type, 'inviteable')->withPivot('status')->get());
+            $invitedModels = $invitedModels->merge(
+                $this->morphedByMany(
+                    Relation::getMorphedModel($type), 'inviteable')->withPivot('status')->get()
+            );
         }
 
         return $invitedModels;
@@ -104,25 +111,27 @@ class CalendarEvent extends Model
         return array_merge(
             [
                 'id' => data_get($this->attributes, 'id', $this->ulid),
-                'title' => $this->title,
+                'calendar_id' => $this->calendar_id,
+                'model_type' => $this->model_type,
+                'model_id' => $this->model_id,
                 'start' => $this->start->format('Y-m-d\TH:i:s.u'),
                 'end' => $this->end?->format('Y-m-d\TH:i:s.u'),
+                'title' => $this->title,
+                'description' => $this->description,
+                'repeat_end' => $this->repeat_end?->format('Y-m-d'),
+                'recurrences' => $this->recurrences,
                 'allDay' => $this->is_all_day,
-                'calendar_id' => $this->calendar_id,
+                'extendedProps' => $this->extended_props,
                 'editable' => ! $this->calendar->is_public && ! $this->is_invited,
                 'is_editable' => ! $this->calendar->is_public && ! $this->is_invited,
                 'is_invited' => $this->is_invited,
                 'is_public' => $this->calendar->is_public,
                 'status' => $this->status ?: 'busy',
                 'invited' => $this->invited->toArray(),
-                'description' => $this->description,
-                'extendedProps' => $this->extended_props,
                 'interval' => $repeat['interval'] ?? null,
                 'unit' => $repeat['unit'] ?? null,
                 'weekdays' => $repeat['weekdays'] ?? [],
                 'monthly' => $repeat['monthly'] ?? 'day',
-                'repeat_end' => $this->repeat_end?->format('Y-m-d'),
-                'recurrences' => $this->recurrences,
                 'repeat_radio' => $this->repeat_end ? 'repeat_end' : ($this->recurrences ? 'recurrences' : null),
             ],
             $attributes

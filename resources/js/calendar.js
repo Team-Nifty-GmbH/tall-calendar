@@ -1,7 +1,6 @@
 const calendar = () => {
     return {
         calendarItem: {},
-        calendarItemProxy: {},
         parseDateTime(event, locale, property) {
             const dateTime = new Date(event.start);
             let config = null;
@@ -43,15 +42,8 @@ const calendar = () => {
             this.calendarId = calendar.id;
             this.calendarItem = calendar;
         },
-        editCalendar(calendar) {
-            this.calendarItem = calendar;
-            this.calendarItemProxy = {
-                ...calendar
-            };
-            this.$wire.editCalendar(calendar);
-        },
         saveCalendar() {
-            this.$wire.saveCalendar(this.calendarItem).then(calendar => {
+            this.$wire.saveCalendar().then(calendar => {
                 if (calendar === false) {
                     return false;
                 }
@@ -59,8 +51,44 @@ const calendar = () => {
                 calendar.group = calendar.group || 'my';
 
                 let index = this.calendars.findIndex(c => c.id === calendar.id);
-                this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
+
+                if (calendar.parentId
+                    || (index !== -1 && this.calendars[index].parentId !== calendar.parentId)
+                ) {
+                    let siblingIndex = this.calendars.findLastIndex(c => c.parentId === calendar.parentId);
+                    let parentIndex = -1;
+
+                    if (siblingIndex !== -1) {
+                        this.calendars.splice(siblingIndex + 1, 0, calendar);
+                    } else {
+                        parentIndex = this.calendars.findIndex(c => c.id === calendar.parentId);
+
+                        if (parentIndex !== -1) {
+                            this.calendars.splice(parentIndex + 1, 0, calendar);
+                        } else {
+                            parentIndex = this.calendars.length;
+                            this.calendars.push(calendar);
+                        }
+                    }
+
+                    if (index !== -1) {
+                        this.calendars.splice(
+                            siblingIndex > index || parentIndex > index ? index : index + 1,
+                            1
+                        );
+                    }
+                } else {
+                    this.calendars.splice(index, index !== -1 ? 1 : 0, calendar);
+                }
+
                 this.calendarId = calendar.id;
+
+                calendar.permission = calendar.is_editable ? 'owner': 'reader';
+                this.calendar.getEventSourceById(this.calendarItem.id)?.remove();
+                calendar.events = (info) => this.$wire.$parent.getEvents(info, calendar);
+                this.calendar.addEventSource(calendar);
+
+                this.$wire.$parent.updateSelectableCalendars(calendar);
 
                 // check if this.close exists
                 if (typeof this.close === 'function') {
@@ -71,19 +99,13 @@ const calendar = () => {
         deleteCalendar() {
             this.$wire.deleteCalendar(this.calendarItem).then(success => {
                 if (success) {
+                    this.calendar.getEventSourceById(this.calendarItem.id).remove();
+                    this.calendars.splice(this.calendars.findIndex(c => c.id === this.calendarItem.id), 1);
+                    this.$wire.$parent.removeSelectableCalendar(this.calendarItem);
+
                     this.close();
                 }
-
-                this.calendar.getEventSourceById(this.calendarItem.id).remove();
-                this.calendars.splice(this.calendars.findIndex(c => c.id === this.calendarItem.id), 1);
             });
-        },
-        resetCalendarItem() {
-            let index = this.calendars.findIndex(c => c.id === this.calendarItemProxy.id);
-
-            if (index !== -1) {
-                this.calendars.splice(index, 1, this.calendarItemProxy);
-            }
         },
         saveEvent() {
             this.$wire.saveEvent(this.$wire.calendarEvent).then(event => {
@@ -224,7 +246,7 @@ const calendar = () => {
                     this.dispatchCalendarEvents('unselect', {jsEvent, view});
                 },
                 dateClick: dateClickInfo => {
-                    this.$wire.onDateClick(dateClickInfo);
+                    this.$wire.onDateClick(dateClickInfo, this.calendarItem);
                     this.dispatchCalendarEvents('dateClick', dateClickInfo);
                 },
                 eventDidMount: eventDidMountInfo => {
@@ -281,6 +303,43 @@ const calendar = () => {
                 },
                 eventsSet: eventsSetInfo => {
                     this.dispatchCalendarEvents('eventsSet', eventsSetInfo);
+                },
+                eventContent(info) {
+                    let eventContent = document.createElement('div');
+                    eventContent.className = 'flex gap-1 justify-between px-1 w-full';
+
+                    let textNode = document.createElement('div');
+                    textNode.className = 'flex gap-1 flex-wrap w-full items-center';
+                    if (! info.event.allDay) {
+                        let calendarBadge = document.createElement('div');
+                        calendarBadge.className = 'h-3 w-3 rounded-full text-xs';
+                        calendarBadge.style.backgroundColor = info.backgroundColor;
+
+                        textNode.appendChild(calendarBadge);
+                    }
+
+                    let titleContainer = document.createElement('span');
+                    titleContainer.className = 'truncate';
+                    titleContainer.innerHTML = info.event.title;
+                    textNode.appendChild(titleContainer);
+
+                    if (info.event.extendedProps.appendTitle) {
+                        let appendTitle = document.createElement('div');
+                        appendTitle.className = 'flex flex-wrap gap-1 px-1';
+                        appendTitle.innerHTML = info.event.extendedProps.appendTitle;
+                        textNode.appendChild(appendTitle);
+                    }
+
+                    eventContent.appendChild(textNode);
+
+                    if (! info.event.allDay && info.timeText) {
+                        let timeNode = document.createElement('div');
+                        timeNode.innerHTML = info.timeText;
+
+                        eventContent.appendChild(timeNode);
+                    }
+
+                    return { html: eventContent.outerHTML };
                 },
             };
 

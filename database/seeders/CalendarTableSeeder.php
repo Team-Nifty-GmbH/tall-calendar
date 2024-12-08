@@ -24,8 +24,8 @@ class CalendarTableSeeder extends Seeder
             ->filter(fn ($model) => class_uses_recursive($model)[HasCalendars::class] ?? false);
 
         foreach ($calendarables as $calendarable) {
-            foreach ($calendarable::all() as $model) {
-                $model->calendars()->saveMany(Calendar::factory()->count(3)->make());
+            foreach ($calendarable::all(['id']) as $model) {
+                $model->calendars()->saveMany(Calendar::factory(['is_public' => false])->count(3)->make());
             }
         }
     }

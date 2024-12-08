@@ -9,16 +9,17 @@ return new class() extends Migration
     public function up(): void
     {
         Schema::table('calendar_events', function (Blueprint $table) {
-            $table->dateTime('repeat_end')->nullable()->after('repeat');
-            $table->unsignedInteger('recurrences')->nullable()->after('repeat_end');
-            $table->json('excluded')->nullable()->after('recurrences');
+            $table->string('model_type')->nullable()->after('calendar_id');
+            $table->unsignedBigInteger('model_id')->nullable()->after('model_type');
+
+            $table->index(['model_type', 'model_id']);
         });
     }
 
     public function down(): void
     {
         Schema::table('calendar_events', function (Blueprint $table) {
-            $table->dropColumn(['repeat_end', 'recurrences', 'excluded']);
+            $table->dropMorphs('model');
         });
     }
 };
