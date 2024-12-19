@@ -55,9 +55,9 @@ class CalendarComponent extends Component
 
     public string $confirmDelete = 'this';
 
-    private Collection $sharedWithMe;
+    protected Collection $sharedWithMe;
 
-    private Collection $myCalendars;
+    protected Collection $myCalendars;
 
     public function mount(): void
     {
