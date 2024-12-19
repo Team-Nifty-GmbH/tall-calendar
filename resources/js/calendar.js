@@ -249,6 +249,9 @@ const calendar = () => {
                     this.$wire.onDateClick(dateClickInfo, this.calendarItem);
                     this.dispatchCalendarEvents('dateClick', dateClickInfo);
                 },
+                viewDidMount: viewDidMountInfo => {
+                    this.dispatchCalendarEvents('viewDidMount', viewDidMountInfo);
+                },
                 eventDidMount: eventDidMountInfo => {
                     this.dispatchCalendarEvents('eventDidMount', eventDidMountInfo);
                 },
