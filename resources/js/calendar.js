@@ -201,7 +201,13 @@ const calendar = () => {
                     this.calendarId = calendar.id;
                 }
 
-                calendar.events = (info) => this.$wire.getEvents(info, calendar);
+                calendar.events = async (info) => {
+                    calendar.isLoading = true;
+                    const events = await this.$wire.getEvents(info, calendar);
+                    calendar.isLoading = false;
+
+                    return events;
+                }
             });
 
             return this.calendars;
@@ -209,10 +215,21 @@ const calendar = () => {
         toggleEventSource(calendar) {
             const calendarEventSource = this.calendar.getEventSourceById(calendar.id);
             if (calendarEventSource) {
-                calendarEventSource.remove();
+                this.hideEventSource(calendar);
             } else {
-                this.calendar.addEventSource(calendar);
+                this.showEventSource(calendar);
             }
+
+            this.dispatchCalendarEvents(
+                'toggleEventSource',
+                this.calendar.getEventSources().map(source => source.internalEventSource)
+            );
+        },
+        showEventSource(calendar) {
+            this.calendar.addEventSource(calendar);
+        },
+        hideEventSource(calendar) {
+            this.calendar.getEventSourceById(calendar.id).remove();
         },
         init() {
             this.id = this.$id('calendar');
@@ -238,7 +255,7 @@ const calendar = () => {
                 selectable: true,
                 selectMirror: true,
                 dayMaxEvents: true,
-                eventSources: this.getCalendarEventSources(),
+                eventSources: [],
                 select: selectionInfo => {
                     this.dispatchCalendarEvents('select', selectionInfo);
                 },
@@ -346,7 +363,17 @@ const calendar = () => {
                 },
             };
 
-            this.calendar = new Calendar(calendarEl, {...defaultConfig, ...this.config});
+            const {activeCalendars, ...filteredConfig} = this.config;
+            this.calendar = new Calendar(calendarEl, {...defaultConfig, ...filteredConfig});
+
+            this.getCalendarEventSources().forEach((calendar) => {
+                if (this.config.activeCalendars && ! this.config.activeCalendars.includes(String(calendar.id))) {
+                    return;
+                }
+
+                this.showEventSource(calendar);
+            });
+
             this.calendar.render();
         },
     }
