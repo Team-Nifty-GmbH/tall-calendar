@@ -5,6 +5,7 @@ namespace TeamNiftyGmbH\Calendar\Livewire;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class CalendarOverview extends Component
@@ -16,6 +17,9 @@ class CalendarOverview extends Component
     public array $selectedCalendar;
 
     public array $parentCalendars = [];
+
+    #[Locked]
+    public array $calendarGroups = [];
 
     public function mount(): void
     {

@@ -48,8 +48,10 @@
         </div>
     </template>
     @if($group === 'my')
-        <x-button icon="plus" class="w-full" x-on:click="calendarItem = {}; $wire.editCalendar();">
-            {{ __('Create Calendar') }}
-        </x-button>
+        @section('calendar-list.create')
+            <x-button icon="plus" class="w-full" x-on:click="calendarItem = {}; $wire.editCalendar();">
+                {{ __('Create Calendar') }}
+            </x-button>
+        @show
     @endif
 </div>

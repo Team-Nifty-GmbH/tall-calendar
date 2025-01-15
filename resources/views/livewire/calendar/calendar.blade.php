@@ -75,5 +75,9 @@
             </x-dialog>
         @show
     </div>
-    <livewire:calendar-overview :show-calendars="$showCalendars" :show-invites="$showInvites" />
+    <livewire:calendar-overview
+        :show-calendars="$showCalendars"
+        :show-invites="$showInvites"
+        :calendar-groups="$this->getCalendarGroups()"
+    />
 </div>

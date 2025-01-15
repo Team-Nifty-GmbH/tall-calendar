@@ -175,12 +175,23 @@ class CalendarComponent extends Component
             ->toArray();
     }
 
+    public function getCalendarGroups(): array
+    {
+        return [
+            'my' => __('My Calendars'),
+            'shared' => __('Shared with me'),
+            'public' => __('Public'),
+            'other' => __('Other'),
+        ];
+    }
+
     public function getCalendars(): array
     {
         $this->allCalendars = array_merge(
             $this->getMyCalendars()->toArray(),
             $this->getSharedWithMeCalendars()->toArray(),
             $this->getPublicCalendars()->toArray(),
+            $this->getOtherCalendars()->toArray(),
         );
 
         $this->selectableCalendars = collect($this->allCalendars)
@@ -252,6 +263,11 @@ class CalendarComponent extends Component
                     'resourceEditable' => false,
                 ]);
             });
+    }
+
+    public function getOtherCalendars(): Collection
+    {
+        return collect();
     }
 
     public function getViews(): array

@@ -23,50 +23,27 @@
             @show
             @section('calendar-overview')
                 <div class="p-1.5 space-y-4">
-                    <div x-data="{show: true}">
-                        <div class="flex justify-between items-center group">
-                            <div class="flex items-center">
-                                <span class="font-semibold dark:text-gray-50 pr-1.5">{{ __('My Calendars') }}</span>
-                                <svg x-on:click="editCalendar({})" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="cursor-pointer invisible group-hover:visible w-5 h-5">
-                                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 9a.75.75 0 00-1.5 0v2.25H9a.75.75 0 000 1.5h2.25V15a.75.75 0 001.5 0v-2.25H15a.75.75 0 000-1.5h-2.25V9z" clip-rule="evenodd" />
-                                </svg>
+                    @section('calendar-overview.items')
+                        @foreach($calendarGroups ?? [] as $group => $label)
+                            <div x-data="{show: true}" @if($group !== 'my') @endifx-cloak x-show="calendars.filter(calendar => calendar.group === '{{ $group }}').length > 0" @endif>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold dark:text-gray-50 pr-1.5">{{ $label }}</span>
+                                    <svg x-on:click="show = ! show" x-bind:class="show || '-rotate-90'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                                <div x-cloak x-show="show" class="max-h-52 overflow-auto">
+                                    <x-tall-calendar::calendar-list :$group />
+                                </div>
                             </div>
-                            <svg x-on:click="show = ! show" x-bind:class="show || '-rotate-90'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </div>
-                        <div x-cloak x-show="show" class="max-h-64 overflow-auto">
-                            <x-tall-calendar::calendar-list group="my" />
-                        </div>
-                    </div>
-                    <div x-data="{show: true}">
-                        <div class="flex justify-between items-center">
-                            <span class="font-semibold dark:text-gray-50 pr-1.5">{{ __('Shared with me') }}</span>
-                            <svg x-on:click="show = ! show" x-bind:class="show || '-rotate-90'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </div>
-                        <div x-cloak x-show="show" class="max-h-52 overflow-auto">
-                            <x-tall-calendar::calendar-list group="shared" />
-                        </div>
-                    </div>
-                    <div x-data="{show: true}">
-                        <div class="flex justify-between items-center">
-                            <span class="font-semibold dark:text-gray-50 pr-1.5">{{ __('Public') }}</span>
-                            <svg x-on:click="show = ! show" x-bind:class="show || '-rotate-90'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </div>
-                        <div x-cloak x-show="show" class="max-h-52 overflow-auto">
-                            <x-tall-calendar::calendar-list group="public" />
-                        </div>
-                    </div>
+                        @endforeach
+                    @show
                 </div>
             @show
         @endif
         @if($showInvites)
             @section('invites')
-                <div x-data="{tab: {name: 'new', status: [null]}}" class="p-1.5 space-y-4">
+                <div x-data="{tab: {name: 'new', status: [null]}}" x-cloak x-show="invites.length > 0" class="p-1.5 space-y-4">
                     <div class="flex justify-between pb-1.5 font-semibold dark:text-gray-50">
                         <div>{{ __('Invites') }}</div>
                     </div>
