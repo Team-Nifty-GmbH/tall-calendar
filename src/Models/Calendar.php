@@ -88,9 +88,6 @@ class Calendar extends Model
                 'hasRepeatableEvents' => $this->has_repeatable_events ?? true,
                 'isPublic' => $this->is_public ?? false,
                 'isShared' => $this->calendarables_count > 1,
-                'children' => $this->id ? static::query()
-                    ->where('parent_id', $this->id)
-                    ->count('id') : 0,
             ],
             $attributes
         );

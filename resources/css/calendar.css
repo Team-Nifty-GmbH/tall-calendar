@@ -61,3 +61,7 @@
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
     @apply border dark:border-slate-600;
 }
+
+.fc-event-main {
+    @apply overflow-hidden truncate;
+}

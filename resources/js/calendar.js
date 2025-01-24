@@ -196,28 +196,41 @@ const calendar = () => {
             this.$wire.dispatch(`calendar-${eventNameKebap}`, params);
         },
         getCalendarEventSources() {
-            this.calendars.forEach((calendar) => {
-                if (this.calendarId === null) {
-                    this.calendarId = calendar.id;
-                }
+            const processCalendars = (calendars) => {
+                calendars.forEach((calendar) => {
+                    // Set `calendarId` for the first encountered calendar
+                    if (this.calendarItem && Object.keys(this.calendarItem).length === 0) {
+                        this.calendarItem = calendar;
+                    }
 
-                calendar.events = async (info) => {
-                    calendar.isLoading = true;
-                    const events = await this.$wire.getEvents(info, calendar);
-                    calendar.isLoading = false;
+                    // Assign the `events` function
+                    calendar.events = async (info) => {
+                        calendar.isLoading = true;
+                        try {
+                            return await this.$wire.getEvents(info, calendar);
+                        } finally {
+                            calendar.isLoading = false;
+                        }
+                    };
 
-                    return events;
-                }
-            });
+                    // Recursively process children if they exist
+                    if (Array.isArray(calendar.children)) {
+                        processCalendars(calendar.children);
+                    }
+                });
+            };
+
+            // Start processing the calendars
+            processCalendars(this.calendars);
 
             return this.calendars;
         },
         toggleEventSource(calendar) {
             const calendarEventSource = this.calendar.getEventSourceById(calendar.id);
             if (calendarEventSource) {
-                this.hideEventSource(calendar);
+                this.hideEventSource(calendar, false);
             } else {
-                this.showEventSource(calendar);
+                this.showEventSource(calendar, false);
             }
 
             this.dispatchCalendarEvents(
@@ -229,7 +242,7 @@ const calendar = () => {
             this.calendar.addEventSource(calendar);
         },
         hideEventSource(calendar) {
-            this.calendar.getEventSourceById(calendar.id).remove();
+            this.calendar.getEventSourceById(calendar.id)?.remove();
         },
         init() {
             this.id = this.$id('calendar');
@@ -374,8 +387,28 @@ const calendar = () => {
                 this.showEventSource(calendar);
             });
 
+            this.traverseCalendars(this.getCalendarEventSources(), (calendar) => {
+                // Check if the calendar is active
+                if (this.config.activeCalendars && !this.config.activeCalendars.includes(String(calendar.id))) {
+                    return; // Skip inactive calendars
+                }
+
+                // Perform actions on the calendar
+                this.showEventSource(calendar);
+            });
+
             this.calendar.render();
+            this.$dispatch('calendar-initialized', this.calendar);
         },
+        traverseCalendars(calendars, callback) {
+            calendars.forEach((calendar) => {
+                callback(calendar);
+
+                if (Array.isArray(calendar.children)) {
+                    this.traverseCalendars(calendar.children, callback);
+                }
+            });
+        }
     }
 }
 
