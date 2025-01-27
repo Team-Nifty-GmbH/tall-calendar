@@ -37,21 +37,22 @@
                                 <x-button
                                     primary
                                     :label="__('Save')"
+                                    x-show="$wire.calendarEvent.is_editable"
                                     x-on:click="
-                                    $wire.confirmSave = $wire.calendarEventWasRepeatable && !$wire.calendarEvent.has_repeats ? 'this' : 'future';
-                                    $wire.calendarEventWasRepeatable ?
-                                        $wireui.confirmDialog({
-                                            id: 'edit-repeatable-event-dialog',
-                                            icon: 'question',
-                                            accept: {
-                                                label: '{{ __('OK') }}',
-                                                execute: () => saveEvent()
-                                            },
-                                            reject: {
-                                                label: '{{ __('Cancel') }}',
-                                            }
-                                        }) :
-                                        saveEvent();
+                                        $wire.confirmSave = $wire.calendarEventWasRepeatable && !$wire.calendarEvent.has_repeats ? 'this' : 'future';
+                                        $wire.calendarEventWasRepeatable ?
+                                            $wireui.confirmDialog({
+                                                id: 'edit-repeatable-event-dialog',
+                                                icon: 'question',
+                                                accept: {
+                                                    label: '{{ __('OK') }}',
+                                                    execute: () => saveEvent()
+                                                },
+                                                reject: {
+                                                    label: '{{ __('Cancel') }}',
+                                                }
+                                            }) :
+                                            saveEvent();
                                     "
                                 />
                             </div>
