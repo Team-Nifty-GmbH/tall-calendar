@@ -23,8 +23,7 @@ class CalendarOverview extends Component
 
     public function mount(): void
     {
-        $this->selectedCalendar = app(config('tall-calendar.models.calendar'))
-            ->toCalendarObject();
+        $this->selectedCalendar = app(config('tall-calendar.models.calendar'))->toCalendarObject();
     }
 
     public function render(): Factory|Application|View
@@ -43,16 +42,7 @@ class CalendarOverview extends Component
 
         $this->selectedCalendar = $calendar;
 
-        $this->parentCalendars = app(config('tall-calendar.models.calendar'))
-            ->query()
-            ->whereKeyNot(data_get($calendar, 'id'))
-            ->whereNull('parent_id')
-            ->when(
-                data_get($calendar, 'id'),
-                fn ($query) => $query->where('model_type', data_get($calendar, 'modelType'))
-            )
-            ->get(['id', 'name', 'description'])
-            ->toArray();
+        $this->parentCalendars = $this->getAvailableParents();
 
         $this->js(
             <<<'JS'
@@ -88,5 +78,19 @@ class CalendarOverview extends Component
             ->firstOrFail();
 
         return $calendar->delete();
+    }
+
+    protected function getAvailableParents(): array
+    {
+        return app(config('tall-calendar.models.calendar'))
+            ->query()
+            ->whereKeyNot(data_get($this->selectedCalendar, 'id'))
+            ->whereNull('parent_id')
+            ->when(
+                data_get($this->selectedCalendar, 'id'),
+                fn ($query) => $query->where('model_type', data_get($this->selectedCalendar, 'modelType'))
+            )
+            ->get(['id', 'name', 'description'])
+            ->toArray();
     }
 }
