@@ -196,32 +196,22 @@ const calendar = () => {
             this.$wire.dispatch(`calendar-${eventNameKebap}`, params);
         },
         getCalendarEventSources() {
-            const processCalendars = (calendars) => {
-                calendars.forEach((calendar) => {
-                    // Set `calendarId` for the first encountered calendar
-                    if (this.calendarItem && Object.keys(this.calendarItem).length === 0) {
-                        this.calendarItem = calendar;
+            this.traverseCalendars(this.calendars, (calendar) => {
+                // Set `calendarId` for the first encountered calendar
+                if (this.calendarItem && Object.keys(this.calendarItem).length === 0) {
+                    this.calendarItem = calendar;
+                }
+
+                // Assign the `events` function
+                calendar.events = async (info) => {
+                    calendar.isLoading = true;
+                    try {
+                        return await this.$wire.getEvents(info, calendar);
+                    } finally {
+                        calendar.isLoading = false;
                     }
-
-                    // Assign the `events` function
-                    calendar.events = async (info) => {
-                        calendar.isLoading = true;
-                        try {
-                            return await this.$wire.getEvents(info, calendar);
-                        } finally {
-                            calendar.isLoading = false;
-                        }
-                    };
-
-                    // Recursively process children if they exist
-                    if (Array.isArray(calendar.children)) {
-                        processCalendars(calendar.children);
-                    }
-                });
-            };
-
-            // Start processing the calendars
-            processCalendars(this.calendars);
+                };
+            });
 
             return this.calendars;
         },
@@ -263,6 +253,7 @@ const calendar = () => {
             let defaultConfig = {
                 plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
                 initialView: 'dayGridMonth',
+                slotDuration: '00:15:00',
                 initialDate: new Date(),
                 editable: true,
                 selectable: true,
@@ -276,6 +267,7 @@ const calendar = () => {
                     this.dispatchCalendarEvents('unselect', {jsEvent, view});
                 },
                 dateClick: dateClickInfo => {
+                    dateClickInfo.view.dateEnv.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                     this.$wire.onDateClick(dateClickInfo, this.calendarItem);
                     this.dispatchCalendarEvents('dateClick', dateClickInfo);
                 },
@@ -379,21 +371,11 @@ const calendar = () => {
             const {activeCalendars, ...filteredConfig} = this.config;
             this.calendar = new Calendar(calendarEl, {...defaultConfig, ...filteredConfig});
 
-            this.getCalendarEventSources().forEach((calendar) => {
-                if (this.config.activeCalendars && ! this.config.activeCalendars.includes(String(calendar.id))) {
-                    return;
-                }
-
-                this.showEventSource(calendar);
-            });
-
             this.traverseCalendars(this.getCalendarEventSources(), (calendar) => {
-                // Check if the calendar is active
                 if (this.config.activeCalendars && !this.config.activeCalendars.includes(String(calendar.id))) {
                     return; // Skip inactive calendars
                 }
 
-                // Perform actions on the calendar
                 this.showEventSource(calendar);
             });
 
