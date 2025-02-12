@@ -96,6 +96,8 @@ class CalendarComponent extends Component
                 'integer',
                 'min:1',
             ],
+
+            'has_taken_place' => 'boolean',
         ];
     }
 
@@ -558,6 +560,7 @@ class CalendarComponent extends Component
                     'calendar_id' => $calendar['id'] ?? null,
                     'model_type' => $calendar['modelType'] ?? null,
                     'model_id' => null,
+                    'has_taken_place' => false,
                     'is_editable' => $calendar['resourceEditable'] ?? false,
                     'is_repeatable' => $calendar['hasRepeatableEvents'] ?? false,
                     'invited' => [],

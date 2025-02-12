@@ -32,6 +32,7 @@ class CalendarEvent extends Model
             'repeat_end' => 'datetime',
             'excluded' => 'array',
             'is_all_day' => 'boolean',
+            'has_taken_place' => 'boolean',
             'extended_props' => 'array',
         ];
     }
@@ -121,6 +122,7 @@ class CalendarEvent extends Model
                 'repeat_end' => $this->repeat_end?->format('Y-m-d'),
                 'recurrences' => $this->recurrences,
                 'allDay' => $this->is_all_day,
+                'has_taken_place' => $this->has_taken_place,
                 'extendedProps' => $this->extended_props,
                 'editable' => ! $this->calendar->is_public && ! $this->is_invited,
                 'is_editable' => ! $this->calendar->is_public && ! $this->is_invited,
