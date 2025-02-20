@@ -195,4 +195,12 @@ class CalendarEvent extends Model
 
         return $this;
     }
+
+    public function toArray(): array
+    {
+        return array_merge(
+            parent::toArray(),
+            ['id' => $this->getRawOriginal('id')]
+        );
+    }
 }
