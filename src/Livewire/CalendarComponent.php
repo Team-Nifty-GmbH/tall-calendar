@@ -96,6 +96,8 @@ class CalendarComponent extends Component
                 'integer',
                 'min:1',
             ],
+
+            'has_taken_place' => 'boolean',
         ];
     }
 
@@ -537,14 +539,28 @@ class CalendarComponent extends Component
         }
 
         if (data_get($calendar, 'resourceEditable', false)) {
+            $start = Carbon::parse($eventInfo['dateStr']);
+
+            if ($start->format('H:i:s') === '00:00:00'
+                && data_get($eventInfo, 'view.type') === 'dayGridMonth'
+            ) {
+                $now = now()->timezone(data_get($eventInfo, 'view.dateEnv.timeZone'));
+                $start->timezone(data_get($eventInfo, 'view.dateEnv.timeZone'))
+                    ->setHour($now->hour)
+                    ->setMinute(now()->ceilMinute(15)->minute);
+            }
+
             $this->onEventClick([
                 'event' => [
-                    'start' => Carbon::parse($eventInfo['dateStr'])->setHour(9)->toDateTimeString(),
-                    'end' => Carbon::parse($eventInfo['dateStr'])->setHour(10)->toDateTimeString(),
-                    'allDay' => false,
+                    'start' => $start->toDateTimeString(),
+                    'end' => $start->addMinutes(15)->toDateTimeString(),
+                    'allDay' => data_get($eventInfo, 'view.type') !== 'dayGridMonth'
+                        ? data_get($eventInfo, 'allDay', false)
+                        : false,
                     'calendar_id' => $calendar['id'] ?? null,
                     'model_type' => $calendar['modelType'] ?? null,
                     'model_id' => null,
+                    'has_taken_place' => false,
                     'is_editable' => $calendar['resourceEditable'] ?? false,
                     'is_repeatable' => $calendar['hasRepeatableEvents'] ?? false,
                     'invited' => [],

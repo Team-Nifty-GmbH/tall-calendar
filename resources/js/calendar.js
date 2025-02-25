@@ -196,18 +196,21 @@ const calendar = () => {
             this.$wire.dispatch(`calendar-${eventNameKebap}`, params);
         },
         getCalendarEventSources() {
-            this.calendars.forEach((calendar) => {
-                if (this.calendarId === null) {
-                    this.calendarId = calendar.id;
+            this.traverseCalendars(this.calendars, (calendar) => {
+                // Set `calendarId` for the first encountered calendar
+                if (this.calendarItem && Object.keys(this.calendarItem).length === 0) {
+                    this.calendarItem = calendar;
                 }
 
+                // Assign the `events` function
                 calendar.events = async (info) => {
                     calendar.isLoading = true;
-                    const events = await this.$wire.getEvents(info, calendar);
-                    calendar.isLoading = false;
-
-                    return events;
-                }
+                    try {
+                        return await this.$wire.getEvents(info, calendar);
+                    } finally {
+                        calendar.isLoading = false;
+                    }
+                };
             });
 
             return this.calendars;
@@ -215,9 +218,9 @@ const calendar = () => {
         toggleEventSource(calendar) {
             const calendarEventSource = this.calendar.getEventSourceById(calendar.id);
             if (calendarEventSource) {
-                this.hideEventSource(calendar);
+                this.hideEventSource(calendar, false);
             } else {
-                this.showEventSource(calendar);
+                this.showEventSource(calendar, false);
             }
 
             this.dispatchCalendarEvents(
@@ -229,7 +232,7 @@ const calendar = () => {
             this.calendar.addEventSource(calendar);
         },
         hideEventSource(calendar) {
-            this.calendar.getEventSourceById(calendar.id).remove();
+            this.calendar.getEventSourceById(calendar.id)?.remove();
         },
         init() {
             this.id = this.$id('calendar');
@@ -250,6 +253,7 @@ const calendar = () => {
             let defaultConfig = {
                 plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
                 initialView: 'dayGridMonth',
+                slotDuration: '00:15:00',
                 initialDate: new Date(),
                 editable: true,
                 selectable: true,
@@ -263,6 +267,7 @@ const calendar = () => {
                     this.dispatchCalendarEvents('unselect', {jsEvent, view});
                 },
                 dateClick: dateClickInfo => {
+                    dateClickInfo.view.dateEnv.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                     this.$wire.onDateClick(dateClickInfo, this.calendarItem);
                     this.dispatchCalendarEvents('dateClick', dateClickInfo);
                 },
@@ -366,16 +371,26 @@ const calendar = () => {
             const {activeCalendars, ...filteredConfig} = this.config;
             this.calendar = new Calendar(calendarEl, {...defaultConfig, ...filteredConfig});
 
-            this.getCalendarEventSources().forEach((calendar) => {
-                if (this.config.activeCalendars && ! this.config.activeCalendars.includes(String(calendar.id))) {
-                    return;
+            this.traverseCalendars(this.getCalendarEventSources(), (calendar) => {
+                if (this.config.activeCalendars && !this.config.activeCalendars.includes(String(calendar.id))) {
+                    return; // Skip inactive calendars
                 }
 
                 this.showEventSource(calendar);
             });
 
             this.calendar.render();
+            this.$dispatch('calendar-initialized', this.calendar);
         },
+        traverseCalendars(calendars, callback) {
+            calendars.forEach((calendar) => {
+                callback(calendar);
+
+                if (Array.isArray(calendar.children)) {
+                    this.traverseCalendars(calendar.children, callback);
+                }
+            });
+        }
     }
 }
 
