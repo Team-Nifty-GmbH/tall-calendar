@@ -1,8 +1,8 @@
 <div class="whitespace-nowrap">
     <template x-for="calendarLoopItem in calendars.filter(calendar => calendar.group === '{{ $group }}');">
-        <div class="rounded-md p-1 bg-primary-500 text-white dark:text-white"
+        <div class="rounded-md p-1 bg-indigo-500 text-white dark:text-white"
              x-bind:class="{
-                'bg-primary-500 text-white': calendarLoopItem.id === calendarId,
+                'bg-indigo-500 text-white': calendarLoopItem.id === calendarId,
                 'pl-7': calendarLoopItem.parentId
              }"
         >
@@ -49,7 +49,7 @@
     </template>
     @if($group === 'my')
         @section('calendar-list.create')
-            <x-button icon="plus" class="w-full" x-on:click="calendarItem = {}; $wire.editCalendar();">
+            <x-button color="secondary" light icon="plus" class="w-full" x-on:click="calendarItem = {}; $wire.editCalendar();">
                 {{ __('Create Calendar') }}
             </x-button>
         @show

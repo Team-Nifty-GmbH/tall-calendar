@@ -56,7 +56,7 @@ class CalendarOverview extends Component
 
         $this->js(
             <<<'JS'
-                $openModal('calendar-modal');
+                $modalOpen('calendar-modal');
             JS
         );
     }

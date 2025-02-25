@@ -2,23 +2,21 @@
     <div>
         @if($showCalendars)
             @section('calendar-modal')
-                <x-modal name="calendar-modal">
-                    <x-card :title="__('Edit Calendar')">
-                        @section('calendar-edit')
-                            <x-tall-calendar::calendar-edit />
-                        @show
-                        <x-slot name="footer">
-                            <div class="flex justify-between gap-x-4">
-                                <div>
-                                    <x-button x-show="$wire.selectedCalendar.id" flat negative :label="__('Delete')" x-on:click="deleteCalendar()" />
-                                </div>
-                                <div class="flex">
-                                    <x-button flat :label="__('Cancel')" x-on:click="close();" />
-                                    <x-button primary :label="__('Save')" x-on:click="saveCalendar()" />
-                                </div>
+                <x-modal id="calendar-modal" :title="__('Edit Calendar')">
+                    @section('calendar-edit')
+                        <x-tall-calendar::calendar-edit />
+                    @show
+                    <x-slot name="footer">
+                        <div class="flex justify-between gap-x-4">
+                            <div>
+                                <x-button x-show="$wire.selectedCalendar.id" flat color="red" :text="__('Delete')" x-on:click="deleteCalendar()" />
                             </div>
-                        </x-slot>
-                    </x-card>
+                            <div class="flex">
+                                <x-button color="secondary" light flat :text="__('Cancel')" x-on:click="$modalClose('calendar-modal');" />
+                                <x-button color="indigo" :text="__('Save')" x-on:click="saveCalendar()" />
+                            </div>
+                        </div>
+                    </x-slot>
                 </x-modal>
             @show
             @section('calendar-overview')
@@ -70,9 +68,9 @@
                                         </div>
                                     </div>
                                     <div class="pt-1.5">
-                                        <x-button x-show="invite?.status !== 'declined'" x-on:click="inviteStatus(invite, 'declined')" 2xs negative :label="__('Decline')"></x-button>
-                                        <x-button x-show="invite?.status !== 'maybe'" x-on:click="inviteStatus(invite, 'maybe')" 2xs warning :label="__('Maybe')"></x-button>
-                                        <x-button x-show="invite?.status !== 'accepted'" x-on:click="inviteStatus(invite, 'accepted')" 2xs positive :label="__('Accept')"></x-button>
+                                        <x-button x-show="invite?.status !== 'declined'" x-on:click="inviteStatus(invite, 'declined')" 2xs color="red" :text="__('Decline')"></x-button>
+                                        <x-button x-show="invite?.status !== 'maybe'" x-on:click="inviteStatus(invite, 'maybe')" 2xs color="amber" :text="__('Maybe')"></x-button>
+                                        <x-button x-show="invite?.status !== 'accepted'" x-on:click="inviteStatus(invite, 'accepted')" 2xs color="emerald" :text="__('Accept')"></x-button>
                                     </div>
                                 </div>
                             </template>
@@ -82,7 +80,7 @@
             @show
         @endif
     </div>
-    <div wire:ignore class="w-full">
+    <div wire:ignore class="w-full overflow-y-scroll">
         <div class="dark:text-gray-50 border-l dark:border-secondary-600" x-bind:id="id"></div>
     </div>
 </x-card>

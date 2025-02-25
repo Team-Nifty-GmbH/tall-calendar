@@ -15,13 +15,13 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Renderless;
 use Livewire\Component;
+use TallStackUi\Traits\Interactions;
 use TeamNiftyGmbH\Calendar\Models\Calendar;
 use TeamNiftyGmbH\Calendar\Models\Pivot\Inviteable;
-use WireUi\Traits\Actions;
 
 class CalendarComponent extends Component
 {
-    use Actions;
+    use Interactions;
 
     #[Locked]
     public array $allCalendars = [];
@@ -524,7 +524,7 @@ class CalendarComponent extends Component
     {
         $this->js(
             <<<'JS'
-               $openModal('calendar-event-modal');
+               $modalOpen('calendar-event-modal');
             JS
         );
     }
