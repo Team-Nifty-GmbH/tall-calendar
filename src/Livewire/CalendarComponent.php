@@ -253,7 +253,8 @@ class CalendarComponent extends Component
 
     public function getPublicCalendars(): Collection
     {
-        return config('tall-calendar.models.calendar')::where('is_public', true)
+        return app(config('tall-calendar.models.calendar'))->query()
+            ->where('is_public', true)
             ->whereNotIn('id', $this->myCalendars->pluck('id'))
             ->whereNotIn('id', $this->sharedWithMe->pluck('id'))
             ->get()
@@ -352,7 +353,7 @@ class CalendarComponent extends Component
             return false;
         }
 
-        $event = config('tall-calendar.models.calendar_event')::query()
+        $event = app(config('tall-calendar.models.calendar_event'))->query()
             ->with('invites')
             ->when(
                 ($attributes['id'] ?? null) === null || is_numeric($attributes['id'] ?? null),
@@ -443,7 +444,7 @@ class CalendarComponent extends Component
 
     public function deleteEvent(array $attributes): array|false
     {
-        $event = config('tall-calendar.models.calendar_event')::query()
+        $event = app(config('tall-calendar.models.calendar_event'))->query()
             ->when(
                 ($attributes['id'] ?? null) === null || is_numeric($attributes['id'] ?? null),
                 fn ($query) => $query->whereKey($attributes['id'] ?? null),
@@ -459,11 +460,13 @@ class CalendarComponent extends Component
             'this' => $event->fill([
                 'excluded' => array_merge(
                     $event->excluded ?: [],
-                    [Carbon::parse($attributes['start'])->format('Y-m-d H:i:s')]
+                    [Carbon::parse($this->oldCalendarEvent['start'])->format('Y-m-d H:i:s')]
                 ),
             ])->save(),
             'future' => $event->fill([
-                'repeat_end' => Carbon::parse($attributes['start'])->subSecond()->format('Y-m-d H:i:s'),
+                'repeat_end' => Carbon::parse($this->oldCalendarEvent['start'])
+                    ->subSecond()
+                    ->toDateTimeString(),
             ])->save(),
             default => $event->delete()
         };
@@ -490,7 +493,7 @@ class CalendarComponent extends Component
 
     public function isCalendarEventRepeatable(int|string $calendarId): bool
     {
-        return (bool) config('tall-calendar.models.calendar')::query()
+        return (bool) app(config('tall-calendar.models.calendar'))->query()
             ->whereKey($calendarId)
             ->value('has_repeatable_events');
     }
@@ -654,7 +657,7 @@ class CalendarComponent extends Component
         if (! ($repeatString = data_get($event, 'repeat'))) {
             return [
                 $event instanceof Model ?
-                    $event : (new (config('tall-calendar.models.calendar_event'))())->forceFill($event),
+                    $event : app(config('tall-calendar.models.calendar_event'))->forceFill($event),
             ];
         }
 
@@ -700,11 +703,12 @@ class CalendarComponent extends Component
                     )
             );
 
-            $events = array_merge($events, Arr::mapWithKeys($dates, function ($date, $key) use ($event) {
+            $events = array_merge($events, Arr::mapWithKeys($dates, function ($date, $key) use ($event, $i) {
+                $repetition = ($key + 1) * ($i + 1);
                 $interval = date_diff(Carbon::parse(data_get($event, 'start')), Carbon::parse(data_get($event, 'end')));
 
                 return [
-                    $key => (new (config('tall-calendar.models.calendar_event'))())->forceFill(
+                    $repetition => app(config('tall-calendar.models.calendar_event'))->forceFill(
                         array_merge(
                             $event,
                             [
@@ -712,7 +716,7 @@ class CalendarComponent extends Component
                                     ->format('Y-m-d H:i:s'),
                                 'end' => $start->add($interval)->format('Y-m-d H:i:s'),
                             ],
-                            ['id' => data_get($event, 'id') . '|' . $key]
+                            ['id' => data_get($event, 'id') . '|' . $repetition]
                         )
                     ),
                 ];
