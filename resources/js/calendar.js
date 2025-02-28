@@ -90,10 +90,7 @@ const calendar = () => {
 
                 this.$wire.$parent.updateSelectableCalendars(calendar);
 
-                // check if this.close exists
-                if (typeof this.close === 'function') {
-                    this.close();
-                }
+                $modalClose('calendar-modal');
             });
         },
         deleteCalendar() {
@@ -103,7 +100,7 @@ const calendar = () => {
                     this.calendars.splice(this.calendars.findIndex(c => c.id === this.calendarItem.id), 1);
                     this.$wire.$parent.removeSelectableCalendar(this.calendarItem);
 
-                    this.close();
+                    $modalClose('calendar-modal');
                 }
             });
         },
@@ -130,10 +127,7 @@ const calendar = () => {
                     this.calendar.addEvent(event, this.calendar.getEventSourceById(event.calendar_id));
                 }
 
-                // check if this.close exists
-                if (typeof this.close === 'function') {
-                    this.close();
-                }
+                $modalClose('calendar-event-modal');
             });
         },
         setDateTime(type, event) {
@@ -178,10 +172,7 @@ const calendar = () => {
                         break;
                 }
 
-                // check if this.close exists
-                if (typeof this.close === 'function') {
-                    this.close();
-                }
+                $modalClose('calendar-event-modal');
             });
         },
         calendar: null,
