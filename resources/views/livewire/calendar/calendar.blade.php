@@ -15,20 +15,10 @@
                                 x-show="calendarEvent.id"
                                 spinner
                                 flat
-                                negative
+                                color="red"
                                 :text="__('Delete')"
                                 x-show="$wire.calendarEvent.is_editable && $wire.calendarEvent.id"
-                                x-on:click="$wireui.confirmDialog({
-                                    id: 'delete-event-dialog',
-                                    icon: 'question',
-                                    accept: {
-                                        label: '{{ __('OK') }}',
-                                        execute: () => deleteEvent()
-                                    },
-                                    reject: {
-                                        label: '{{ __('Cancel') }}',
-                                    }
-                                })"
+                                x-on:click="$interaction('dialog').wireable($wire.id).confirm('{{ __('OK') }}', () => deleteEvent()).cancel('{{ __('Cancel') }}').send()"
                             />
                         </div>
                         <div class="flex">
@@ -40,18 +30,8 @@
                                 x-on:click="
                                     $wire.confirmSave = $wire.calendarEventWasRepeatable && !$wire.calendarEvent.has_repeats ? 'this' : 'future';
                                     $wire.calendarEventWasRepeatable ?
-                                        $wireui.confirmDialog({
-                                            id: 'edit-repeatable-event-dialog',
-                                            icon: 'question',
-                                            accept: {
-                                                label: '{{ __('OK') }}',
-                                                execute: () => saveEvent()
-                                            },
-                                            reject: {
-                                                label: '{{ __('Cancel') }}',
-                                            }
-                                        }) :
-                                        saveEvent();
+                                        ? $interaction('dialog').wireable($wire.id).confirm('{{ __('OK') }}', () => saveEvent()).cancel('{{ __('Cancel') }}').send()
+                                        : saveEvent();
                                 "
                             />
                         </div>

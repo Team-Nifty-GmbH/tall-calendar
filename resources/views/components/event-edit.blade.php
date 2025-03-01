@@ -32,9 +32,7 @@
             />
         </div>
         <div class="grid grid-cols-3 items-center gap-1.5">
-            <x-label>
-                {{__('End')}}
-            </x-label>
+            <x-label :label="__('End')" />
             <x-input
                 id="calendar-event-end-date"
                 type="date"
